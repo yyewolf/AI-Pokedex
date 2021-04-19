@@ -1,0 +1,4 @@
+
+*.bat
+.vscode/settings.json
+static/pokemodel.pth
