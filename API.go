@@ -10,6 +10,7 @@ import (
 
 func findPoke(w http.ResponseWriter, r *http.Request) {
 	url := r.FormValue("url")
+	calls++
 
 	if !strings.HasPrefix(url, "http") || strings.Contains(url, " ") {
 		w.WriteHeader(http.StatusInternalServerError)

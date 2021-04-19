@@ -7,6 +7,8 @@ import (
 	"syscall"
 )
 
+var calls int
+
 func main() {
 	go hostService()
 	// Wait here until CTRL-C or other term signal is received.

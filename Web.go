@@ -4,6 +4,7 @@ import (
 	"embed"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gorilla/pat"
@@ -33,6 +34,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	Path := r.URL.Path[1:]
 	Path = "www/" + Path
 	if Path == "www/" {
+		dat = strings.ReplaceAll(dat, "{Calls}", strconv.Itoa(calls))
 		fmt.Fprint(w, dat)
 	} else {
 		dat, err := webbox.ReadFile(Path)
