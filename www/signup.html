@@ -18,6 +18,7 @@
 
     <!-- Custom styles for this template -->
     <link href="css/style.css" rel="stylesheet">
+    <link href="css/login.css" rel="stylesheet">
   </head>
 
   <body>
@@ -25,7 +26,7 @@
     <header>
       <div class="main-navbar navbar navbar-dark bg-dark box-shadow">
         <div class="container d-flex justify-content-between">
-          <a href="#" class="navbar-brand d-flex align-items-center">
+          <a href="/" class="navbar-brand d-flex align-items-center">
 		  <svg version="1.1" id="Pokéball" width="25" height="25" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 595.3 594.1" style="enable-background:new 0 0 595.3 594.1;" xml:space="preserve">
 			<style type="text/css">
 				.st0{fill:#FFFFFF;}
@@ -57,8 +58,6 @@
 		  <strong>AI Pokedex</strong>
           </a>
 		  <div>
-			  <a type="button" href="signup" class="btn btn-primary">Sign Up</a>
-			  <a type="button" href="login"class="btn btn-primary">Log in</a>
 			  <a type="button" href="https://paypal.me/yyewolf" class="btn btn-primary">Donations</a>
 			  <a type="button" href="./docs.html"class="btn btn-secondary">Documentation</a>
           </div>
@@ -70,10 +69,8 @@
 
       <section class="main-jumbo jumbotron text-center">
         <div class="container">
-          <h1 class="jumbotron-heading">Welcome to AI Pokedex.</h1>
-          <p class="lead">Enter an URL and get your result to get the Pokémon's name.</p>
-          <p class="lead">(Works well with Poketwo)</p>
-          <p class="lead">Calls since last restart : {Calls}</p>
+          <h1 class="jumbotron-heading">Sign up page.</h1>
+          <p style="color:red">{Error} </p>
         </div>
       </section>
 
@@ -85,15 +82,16 @@
             <div class="col-md-1">
             </div>
             <div class="col-md-10">
-				<form class="form-inline">
-				  <div class="form-group mb-2">
-					<label for="inputURL">Enter URL :</label>
+				<form action="signup" method="post">
+				  <div class="container">
+					<label for="email"><b>Email</b></label>
+					<input type="text" placeholder="Enter email" name="email" required>
+
+					<label for="password"><b>Password</b></label>
+					<input type="password" placeholder="Enter Password" name="password" required>
+
+					<button type="submit">Sign up</button>
 				  </div>
-				  <div class="form-group w-75 mx-sm-3 mb-2">
-					<label for="inputURL" class="sr-only">URL</label>
-					<input type="text" class="form-control input-width" id="inputURL" placeholder="URL">
-				  </div>
-				  <button class="btn btn-primary mb-2 validate-url" type="button">Submit</button>
 				</form>
             </div>
             <div class="col-md-1">

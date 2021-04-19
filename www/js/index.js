@@ -41,13 +41,17 @@ function set() {
             if (status === 200) {
                 callback(null, xhr.response);
             } else {
-                callback(status, xhr.response);
+                result.html(`
+                    <div class="card text-white bg-dark mb-3" style="max-width: 18rem;">
+                      <div class="card-body">
+                        <h5 class="card-title">Error</h5>
+                        <p class="card-text">${xhr.statusText}</p>
+                      </div>
+                    </div>
+                `)
             }
         };
-		xhr.onerror = function() {
-            callback(null, xhr.response);
-        };
-        xhr.send(data);
+        xhr.send(data)
     };
 	
 	$(".validate-url").click(function() {

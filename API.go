@@ -6,11 +6,42 @@ import (
 	"net/http"
 	"os/exec"
 	"strings"
+	"time"
+
+	"github.com/juju/ratelimit"
 )
 
 func findPoke(w http.ResponseWriter, r *http.Request) {
 	url := r.FormValue("url")
+	token := r.FormValue("token")
 	calls++
+
+	if token == "" {
+		token = r.Header.Get("X-Real-Ip")
+		if _, ok := ratelimits[token]; !ok {
+			ratelimits[token] = ratelimit.NewBucket(60*time.Second, 2)
+		}
+	} else {
+		if !tokenExist(token) {
+			w.WriteHeader(http.StatusNotAcceptable)
+			w.Write([]byte("403 - Access denied."))
+			return
+		}
+		if _, ok := ratelimits[token]; !ok {
+			ratelimits[token] = ratelimit.NewBucket(60*time.Second, 5)
+		}
+	}
+
+	u := getUserByToken(token)
+
+	if !u.Paid {
+		d := ratelimits[token].Take(1)
+		if d > 0 {
+			w.WriteHeader(http.StatusTooManyRequests)
+			w.Write([]byte("1015 - You are being rate limited."))
+			return
+		}
+	}
 
 	if !strings.HasPrefix(url, "http") || strings.Contains(url, " ") {
 		w.WriteHeader(http.StatusInternalServerError)
