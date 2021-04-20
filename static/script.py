@@ -14,7 +14,8 @@ from typing import Union
 import sys
 
 warnings.filterwarnings("ignore")
-sys.stderr = open(os.devnull, "w")  # silence stderr
+sys.stderr = open(os.devnull, "w")  # silence stder
+torch.set_num_threads(11)
 
 class ConditionalPad:
     def __call__(self, image):
@@ -38,7 +39,7 @@ class PokeDetector:
         model_path='./static/pokemodel.pth', session=None,
         old_model=False
     ):
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cpu")
         self.model = torch.load(model_path, map_location=self.device)
         self.model.eval()
         txs = [
@@ -72,7 +73,7 @@ class PokeDetector:
         image = image.unsqueeze(0)
         image = image.to(self.device)
         output = self.model(image)
-        index = output.data.cpu().numpy().argmax()
+        value, index = torch.max(output,1)
         sm = torch.nn.Softmax()
         probabilities = sm(output) 
         return (str(self.classes[index]), probabilities[0][index].item())
