@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/badoux/checkmail"
 	"github.com/gorilla/pat"
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
@@ -19,7 +20,7 @@ import (
 var webbox embed.FS
 
 type cookieUser struct {
-	Token         string
+	Email         string
 	Authenticated bool
 }
 
@@ -52,6 +53,7 @@ func hostService() {
 	mux.Post("/signup", compressHandler(http.HandlerFunc(signup)))
 	mux.Get("/login", compressHandler(http.HandlerFunc(login)))
 	mux.Get("/signup", compressHandler(http.HandlerFunc(signup)))
+	mux.Get("/refreshToken", compressHandler(http.HandlerFunc(refreshToken)))
 
 	mux.Get("/", compressHandler(http.HandlerFunc(indexHandler)))
 
@@ -90,7 +92,14 @@ func signup(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		if val, ok := session.Values["user"]; ok {
 			user := val.(cookieUser)
-			u := getUserByToken(user.Token)
+			if !emailExist(user.Email) {
+				session.Values["user"] = User{}
+				session.Options.MaxAge = -1
+				err = session.Save(r, w)
+				http.Redirect(w, r, "https://aipokedex.com/login", http.StatusSeeOther)
+				return
+			}
+			u := getUserByEmail(user.Email)
 			datb, _ := webbox.ReadFile("www/connected.html")
 			dat := string(datb)
 			dat = strings.ReplaceAll(dat, "{Token}", u.Token)
@@ -112,6 +121,23 @@ func signup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if email == "" || !strings.Contains(email, "@") || !strings.Contains(email, ".") {
+		datb, _ := webbox.ReadFile("www/signup.html")
+		dat := string(datb)
+		dat = strings.ReplaceAll(dat, "{Error}", "Invalid email")
+		fmt.Fprint(w, dat)
+		return
+	}
+
+	err = checkmail.ValidateHost(email)
+	if err != nil {
+		fmt.Println(err)
+	}
+	var (
+		serverHostName    = "ssl0.ovh.net"        // set your SMTP server here
+		serverMailAddress = "tristan@smagghe.com" // set your valid mail address here
+	)
+	err = checkmail.ValidateHostAndUser(serverHostName, serverMailAddress, email)
+	if _, ok := err.(checkmail.SmtpError); ok && err != nil {
 		datb, _ := webbox.ReadFile("www/signup.html")
 		dat := string(datb)
 		dat = strings.ReplaceAll(dat, "{Error}", "Invalid email")
@@ -154,7 +180,7 @@ func signup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userSession := &cookieUser{
-		Token:         newUser.Token,
+		Email:         newUser.Email,
 		Authenticated: true,
 	}
 
@@ -175,7 +201,14 @@ func login(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		if val, ok := session.Values["user"]; ok {
 			user := val.(cookieUser)
-			u := getUserByToken(user.Token)
+			if !emailExist(user.Email) {
+				session.Values["user"] = User{}
+				session.Options.MaxAge = -1
+				err = session.Save(r, w)
+				http.Redirect(w, r, "https://aipokedex.com/login", http.StatusSeeOther)
+				return
+			}
+			u := getUserByEmail(user.Email)
 			datb, _ := webbox.ReadFile("www/connected.html")
 			dat := string(datb)
 			dat = strings.ReplaceAll(dat, "{Token}", u.Token)
@@ -214,13 +247,13 @@ func login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userSession := &cookieUser{
-		Token:         user.Token,
+		Email:         user.Email,
 		Authenticated: true,
 	}
 
 	session.Values["user"] = userSession
 
-	u := getUserByToken(userSession.Token)
+	u := getUserByEmail(user.Email)
 
 	err = session.Save(r, w)
 
@@ -230,4 +263,30 @@ func login(w http.ResponseWriter, r *http.Request) {
 	dat = strings.ReplaceAll(dat, "{Email}", u.Email)
 	dat = strings.ReplaceAll(dat, "{Paid}", strconv.FormatBool(u.Paid))
 	fmt.Fprint(w, dat)
+}
+
+func refreshToken(w http.ResponseWriter, r *http.Request) {
+	session, err := store.Get(r, "cookie-name")
+	if err != nil {
+		http.Redirect(w, r, "https://aipokedex.com/login", http.StatusSeeOther)
+	}
+	var val interface{}
+	var ok bool
+	if val, ok = session.Values["user"]; !ok {
+		http.Redirect(w, r, "https://aipokedex.com/login", http.StatusSeeOther)
+		return
+	}
+
+	user := val.(cookieUser)
+	u := getUserByEmail(user.Email)
+
+	//Change token
+	u.Token = generateSecureToken(30)
+
+	database.Update("accounts").
+		Set("token", u.Token).
+		Where("email=$1", user.Email).
+		Exec()
+
+	http.Redirect(w, r, "https://aipokedex.com/login", http.StatusSeeOther)
 }

@@ -49,6 +49,7 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//GET POKENAME HERE
 	result := new(bytes.Buffer)
 	cmd := exec.Command("python3", "./static/script.py", url)
 	cmd.Stdout = result

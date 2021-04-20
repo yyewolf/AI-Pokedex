@@ -3,6 +3,7 @@ module GorgoniaTest
 go 1.16
 
 require (
+	github.com/badoux/checkmail v1.2.1
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
