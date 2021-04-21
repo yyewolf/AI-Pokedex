@@ -1,10 +1,9 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
+	"io/ioutil"
 	"net/http"
-	"os/exec"
 	"strings"
 	"time"
 
@@ -49,18 +48,40 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//GET POKENAME HERE
-	result := new(bytes.Buffer)
-	cmd := exec.Command("python3", "./static/script.py", url)
-	cmd.Stdout = result
-	cmd.Run()
+	resp, err := http.Post("http://127.0.0.1:5300", "", strings.NewReader(url))
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("500 - Try again later."))
+		return
+	}
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+	response := string(body)
+	response = strings.ReplaceAll(response, "b'", "")
+	response = strings.ReplaceAll(response, "'", "")
 
-	str := result.String()
-	if str != "" {
+	if response != "" {
 		w.Header().Add("Content-Type", "application/json")
-		fmt.Fprint(w, result.String())
+		fmt.Fprint(w, response)
 	} else {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("500 - Something bad happened!"))
 	}
+
+	/*
+		//GET POKENAME HERE
+		result := new(bytes.Buffer)
+		cmd := exec.Command("python3", "./static/script.py", url)
+		cmd.Stdout = result
+		cmd.Run()
+
+		str := result.String()
+		if str != "" {
+			w.Header().Add("Content-Type", "application/json")
+			fmt.Fprint(w, result.String())
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("500 - Something bad happened!"))
+		}
+	*/
 }
