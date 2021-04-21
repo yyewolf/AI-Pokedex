@@ -53,6 +53,8 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Println("Sarting request : " + url)
+
 	resp, err := http.Post("http://127.0.0.1:5300", "", strings.NewReader(url))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

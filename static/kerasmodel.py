@@ -36,10 +36,9 @@ def center_crop(img, new_width=None, new_height=None):
 def predict_this(this_img):
     width, height = this_img.size
     if width == 800 and height == 500:
-        r = sc.crop(this_img, 400, 400, True, 0.6, 0.2)
+        this_img = center_crop(this_img, 400, 500)
     if width == 300 and height == 300:
-        r = sc.crop(this_img, 120, 120, True, 0.6, 0.2)
-        this_img=this_img.crop((r["top_crop"]["x"], r["top_crop"]["y"], r["top_crop"]["x"]+r["top_crop"]["width"], r["top_crop"]["y"]+r["top_crop"]["height"]))
+        this_img = center_crop(this_img, 250, 250)
     im = this_img.resize((160,160)) # size expected by network
     img_array = np.array(im)
     img_array = img_array/255 # rescale pixel intensity as expected by network
@@ -50,6 +49,8 @@ def predict_this(this_img):
 
 def identify(url):
     response = requests.get(url)
+    if response.status_code != 200:
+        return 0,0
     _img = Image.open(BytesIO(response.content)).convert('RGB')
     index, conf = predict_this(_img)
     return classes[0][index], conf
@@ -60,6 +61,9 @@ class myHandler(BaseHTTPRequestHandler):
         content_length = int(self.headers['Content-Length'])
         url = self.rfile.read(content_length)
         poke, conf = identify(url)
+        if poke == 0:
+            self.wfile.write("error".encode("utf-8"))
+            return
         confidence = round(conf*100, 2)
         self.send_response(200)
         self.send_header('Content-type','application/json')
