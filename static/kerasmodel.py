@@ -36,7 +36,7 @@ def center_crop(img, new_width=None, new_height=None):
 def predict_this(this_img):
     width, height = this_img.size
     if width == 800 and height == 500:
-        this_img = center_crop(this_img, 500, 500)
+        r = sc.crop(this_img, 400, 400, True, 0.6, 0.2)
     if width == 300 and height == 300:
         r = sc.crop(this_img, 120, 120, True, 0.6, 0.2)
         this_img=this_img.crop((r["top_crop"]["x"], r["top_crop"]["y"], r["top_crop"]["x"]+r["top_crop"]["width"], r["top_crop"]["y"]+r["top_crop"]["height"]))
