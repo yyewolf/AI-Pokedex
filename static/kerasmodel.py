@@ -9,6 +9,9 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import logging
 from keras.models import Model,load_model
 import pickle
+import smartcrop
+
+sc = smartcrop.SmartCrop()
 
 classes = []
 with (open("static/pokemon_classes", "rb")) as openfile:
@@ -33,7 +36,10 @@ def center_crop(img, new_width=None, new_height=None):
 def predict_this(this_img):
     width, height = this_img.size
     if width == 800 and height == 500:
-        this_img = center_crop(this_img, 500,500)
+        this_img = center_crop(this_img, 500, 500,True,0.6,0.4)
+    if width == 300 and height == 300:
+        r = sc.crop(this_img, 120, 120)
+        this_img=this_img.crop((r["top_crop"]["x"], r["top_crop"]["y"], r["top_crop"]["x"]+r["top_crop"]["width"], r["top_crop"]["y"]+r["top_crop"]["height"]))
     im = this_img.resize((160,160)) # size expected by network
     img_array = np.array(im)
     img_array = img_array/255 # rescale pixel intensity as expected by network
