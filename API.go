@@ -34,6 +34,11 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 	u := getUserByToken(token)
 
 	if !u.Paid {
+		if ratelimits[token].Capacity() == 0 {
+			w.WriteHeader(http.StatusTooManyRequests)
+			w.Write([]byte("1015 - You are being rate limited."))
+			return
+		}
 		d := ratelimits[token].Take(1)
 		if d > 0 {
 			w.WriteHeader(http.StatusTooManyRequests)
