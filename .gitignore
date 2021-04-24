@@ -2,3 +2,5 @@
 *.bat
 .vscode/settings.json
 static/pokemodel.pth
+static/old/*
+static/dataset maker/*
