@@ -4,3 +4,4 @@
 static/pokemodel.pth
 static/old/*
 static/dataset maker/*
+static/model.h5
