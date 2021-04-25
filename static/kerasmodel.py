@@ -150,6 +150,7 @@ def test(urls):
 urls = [
     "https://media.discordapp.net/attachments/781495172893900830/835782731106353162/pokemon.jpg", #Buizel
     "https://media.discordapp.net/attachments/781495172893900830/835613729370144838/pokemon.jpg", #Beldum
+    "https://media.discordapp.net/attachments/781495172893900830/835613729370144838/pokemon.jpg", #Beldum
     "https://cdn.discordapp.com/attachments/781495172893900830/835617084620406854/pokemon.jpg", #Tangela
     "https://cdn.discordapp.com/attachments/781495172893900830/835720117449916426/pokemon.jpg", #Dugtrio
     "https://cdn.discordapp.com/attachments/781495172893900830/835536417496760410/pokemon.jpg", #Zubat
@@ -162,6 +163,9 @@ urls = [
     "https://media.discordapp.net/attachments/781495172893900830/832025409855160409/pokemon.jpg", #Miltank
     "https://media.discordapp.net/attachments/781495172893900830/835820514319794226/pokemon.jpg", #Aron
     "https://media.discordapp.net/attachments/781495172893900830/835845178425868298/pokemon.jpg", #Luxray
+    "https://media.discordapp.net/attachments/781495172893900830/835439388544335902/pokemon.jpg", #Grimer
+    "https://media.discordapp.net/attachments/781495172893900830/835440053765406730/pokemon.jpg", #Arcanine 
+    "https://media.discordapp.net/attachments/781495172893900830/835351230959845386/pokemon.jpg", #Noibat 
 ]
 
 #test(urls)
