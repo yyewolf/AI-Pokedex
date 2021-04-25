@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -37,7 +38,7 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if ratelimits[token].Capacity() == 0 {
+	if ratelimits[token].Available() == 0 {
 		w.WriteHeader(http.StatusTooManyRequests)
 		w.Write([]byte("1015 - You are being rate limited."))
 		return
@@ -45,22 +46,23 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 	d := ratelimits[token].Take(1)
 	if d > 0 {
 		w.WriteHeader(http.StatusTooManyRequests)
-		w.Write([]byte("1015 - You are being rate limited."))
+		w.Header().Add("RateLimit-Reset", strconv.FormatInt(int64(d.Seconds()), 10))
+		w.Write([]byte("1015 - You are being rate limited (" + strconv.FormatInt(int64(d.Seconds()), 10) + ")."))
 		return
 	}
+
+	w.Header().Add("RateLimit-Remaining", strconv.FormatInt(ratelimits[token].Available(), 10))
 
 	if !strings.HasPrefix(url, "http") || strings.Contains(url, " ") {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("500 - Something bad happened!"))
+		w.Write([]byte("500 - Wrong URL Format."))
 		return
 	}
-
-	fmt.Println("Sarting request : " + url)
 
 	resp, err := http.Post("http://127.0.0.1:5300", "", strings.NewReader(url))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("500 - Try again later."))
+		w.Write([]byte("500 - Recognition API is offline."))
 		return
 	}
 	defer resp.Body.Close()
@@ -74,7 +76,7 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, response)
 	} else {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("500 - Something bad happened!"))
+		w.Write([]byte("500 - Recognition API is offline."))
 	}
 
 	/*

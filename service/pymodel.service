@@ -4,7 +4,7 @@ Description=AIPokedex (Python)
 [Service]
 WorkingDirectory=/root/aipokedex/
 LimitNOFILE=1000000
-ExecStart=/usr/bin/python3.8 /root/aipokedex/static/kerasmodel.py
+ExecStart=/usr/bin/python3 /root/aipokedex/static/kerasmodel.py
 Restart=always
 RestartSec=1
 
