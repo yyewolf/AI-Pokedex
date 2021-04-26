@@ -41,9 +41,9 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 	calls++
 
 	u := getUserByToken(token)
+	token = r.Header.Get("X-Real-Ip")
 
 	if token == "" {
-		token = r.Header.Get("X-Real-Ip")
 		if _, ok := ratelimits[token]; !ok {
 			ratelimits[token] = ratelimit.NewBucket(30*time.Second, 1)
 		}

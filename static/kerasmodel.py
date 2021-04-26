@@ -115,8 +115,36 @@ def predict_this(this_img):
         this_img = Image.fromarray(cropped)
         #this_img.save('test.jpg')
     if width == 300 and height == 300:
-        this_img = center_crop(this_img, 220, 220)
-        this_img2 = center_crop(this_img, 300, 250)
+        #this_img = center_crop(this_img, 286, 287)
+        #this_img2 = center_crop(this_img, 270, 270)
+        
+        img = np.array(this_img)
+        img2 = img
+        img = cv2.flip(img, 1)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        blur = cv2.GaussianBlur(gray, (5, 5), 0)
+        blur = cv2.blur(blur,(5,5))
+        canny = cv2.Canny(blur, 100, 200)
+
+        ## find the non-zero min-max coords of canny
+        pts = np.argwhere(canny>0)
+        y1,x1 = pts.min(axis=0)
+        y2,x2 = pts.max(axis=0)
+        x1,y1 = x1-70, y1-70
+        y2,x2 = x2+70, y2+70
+        
+        x1 = harmonize(x1, img.shape[0])
+        x2 = harmonize(x2, img.shape[0])
+        y1 = harmonize(y1, img.shape[1])
+        y2 = harmonize(y2, img.shape[1])
+
+        ## crop the region
+        cropped = img[y1:y2, x1:x2]
+        this_img = Image.fromarray(cropped)
+        cropped2 = img2[y1:y2, x1:x2]
+        this_img2 = Image.fromarray(cropped2)
+        #this_img.save('test1.jpg')
+        #this_img2.save('test2.jpg')
     im = this_img.resize((160,160)) # size expected by network
     img_array = np.array(im)
     #img_array = img_array/255 # rescale pixel intensity as expected by network
@@ -125,14 +153,14 @@ def predict_this(this_img):
     pred = tf.keras.activations.softmax(pred)
     index = np.argmax(pred, axis=1).tolist()[0]
     if this_img2 != None:
-        im2 = this_img.resize((160,160)) # size expected by network
+        im2 = this_img2.resize((160,160)) # size expected by network
         img_array2 = np.array(im2)
         #img_array = img_array/255 # rescale pixel intensity as expected by network
         img_array2 = np.expand_dims(img_array2, axis=0) # reshape from (160,160,3) to (1,160,160,3)
         pred2 = model(img_array2)
         pred2 = tf.keras.activations.softmax(pred2)
         index2 = np.argmax(pred2, axis=1).tolist()[0]
-        if pred2[0][index2] > pred[0][index]:
+        if float(pred2[0][index2]) > float(pred[0][index]+0.14):
             return index2, pred2[0][index2]
     return index, pred[0][index]
 
@@ -207,7 +235,7 @@ urls = [
     "https://media.discordapp.net/attachments/834182037501902849/834357940584579102/spawn.png", #Glaceon 
 ]
 
-test(urls)
+#test(urls)
 
 port = 5300
 server = HTTPServer(('', port), myHandler)
