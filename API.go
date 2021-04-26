@@ -11,6 +11,30 @@ import (
 	"github.com/juju/ratelimit"
 )
 
+func adminArea(w http.ResponseWriter, r *http.Request) {
+	email := r.FormValue("email")
+	paid := r.FormValue("paid")
+	pswd := r.FormValue("pswd")
+
+	if pswd != "***REMOVED***" {
+		return
+	}
+
+	u := getUserByEmail(email)
+
+	b, err := strconv.ParseBool(paid)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("400 - Wrong boolean value."))
+		return
+	}
+
+	database.Update("accounts").
+		Set("paid", b).
+		Where("email=$1", u.Email).
+		Exec()
+}
+
 func findPoke(w http.ResponseWriter, r *http.Request) {
 	url := r.FormValue("url")
 	token := r.FormValue("token")

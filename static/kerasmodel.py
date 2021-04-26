@@ -61,12 +61,32 @@ model = tf.keras.models.load_model('static/model.h5')
 # json_config = model.to_json()
 # with open('static/model_config.json', 'w') as json_file:
     # json_file.write(json_config)
+    
+def harmonize(val, maxi):
+    if val < 0:
+        return int(0)
+    elif val > maxi:
+        return int(maxi)
+    return val
 
-def center_crop(img, new_width=None, new_height=None):      
-    left = int(img.size[0]/2-new_width/2)
-    upper = int(img.size[1]/2-new_height/2)
-    right = left + new_width
-    lower = upper + new_height
+def center_crop(img, new_width=None, new_height=None, center=None):
+    left, upper, right, lower = (0,0,img.size[0],img.size[1])
+    if center == None:
+        left = int(img.size[0]/2-new_width/2)
+        upper = int(img.size[1]/2-new_height/2)
+        right = left + new_width
+        lower = upper + new_height
+    else:
+        left = int(center[0]/2-new_width/2)
+        upper = int(center[1]/2-new_height/2)
+        right = left + new_width
+        lower = upper + new_height
+        
+    left = harmonize(left, img.size[0])
+    right = harmonize(right, img.size[0])
+    upper = harmonize(upper, img.size[1])
+    lower = harmonize(lower, img.size[1])
+
 
     im_cropped = img.crop((left, upper,right,lower))
     return im_cropped
@@ -74,6 +94,7 @@ def center_crop(img, new_width=None, new_height=None):
 # preprocessing and predicting function for test images:
 def predict_this(this_img):
     width, height = this_img.size
+    this_img2 = None
     if width == 800 and height == 500:
         this_img = center_crop(this_img, 550, 500)
         #this_img = center_crop(this_img, 800, 500)
@@ -94,7 +115,8 @@ def predict_this(this_img):
         this_img = Image.fromarray(cropped)
         #this_img.save('test.jpg')
     if width == 300 and height == 300:
-        this_img = center_crop(this_img, 260, 260)
+        this_img = center_crop(this_img, 220, 220)
+        this_img2 = center_crop(this_img, 300, 250)
     im = this_img.resize((160,160)) # size expected by network
     img_array = np.array(im)
     #img_array = img_array/255 # rescale pixel intensity as expected by network
@@ -102,6 +124,16 @@ def predict_this(this_img):
     pred = model(img_array)
     pred = tf.keras.activations.softmax(pred)
     index = np.argmax(pred, axis=1).tolist()[0]
+    if this_img2 != None:
+        im2 = this_img.resize((160,160)) # size expected by network
+        img_array2 = np.array(im2)
+        #img_array = img_array/255 # rescale pixel intensity as expected by network
+        img_array2 = np.expand_dims(img_array2, axis=0) # reshape from (160,160,3) to (1,160,160,3)
+        pred2 = model(img_array2)
+        pred2 = tf.keras.activations.softmax(pred2)
+        index2 = np.argmax(pred2, axis=1).tolist()[0]
+        if pred2[0][index2] > pred[0][index]:
+            return index2, pred2[0][index2]
     return index, pred[0][index]
 
 def identify(url):
@@ -166,9 +198,16 @@ urls = [
     "https://media.discordapp.net/attachments/781495172893900830/835439388544335902/pokemon.jpg", #Grimer
     "https://media.discordapp.net/attachments/781495172893900830/835440053765406730/pokemon.jpg", #Arcanine 
     "https://media.discordapp.net/attachments/781495172893900830/835351230959845386/pokemon.jpg", #Noibat 
+    
+    "https://media.discordapp.net/attachments/834182037501902849/834338255008170064/spawn.png", #Sirfetch'd 
+    "https://media.discordapp.net/attachments/834182037501902849/834313661186834492/spawn.png", #Morelull 
+    "https://media.discordapp.net/attachments/594852314607517720/834383171679289344/spawn.png", #Eelektrik 
+    "https://media.discordapp.net/attachments/797874693293211668/833605314829484102/spawn.png", #Metang 
+    "https://media.discordapp.net/attachments/834182037501902849/834382306869116928/spawn.png", #Ambipom 
+    "https://media.discordapp.net/attachments/834182037501902849/834357940584579102/spawn.png", #Glaceon 
 ]
 
-#test(urls)
+test(urls)
 
 port = 5300
 server = HTTPServer(('', port), myHandler)
