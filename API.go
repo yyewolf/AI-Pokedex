@@ -41,9 +41,32 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 	calls++
 
 	u := getUserByToken(token)
-	token = r.Header.Get("X-Real-Ip")
+	/*
+		Applies the first rate limiter : IP based
+	*/
+	IP := r.Header.Get("X-Real-Ip")
+	if _, ok := iplimits[IP]; !ok {
+		iplimits[IP] = ratelimit.NewBucket(2*time.Second, 1)
+	}
+	if iplimits[IP].Available() == 0 {
+		w.WriteHeader(http.StatusTooManyRequests)
+		w.Write([]byte("1015 - You are being rate limited."))
+		return
+	}
+	d := iplimits[IP].Take(1)
+	if d > 0 {
+		w.WriteHeader(http.StatusTooManyRequests)
+		w.Header().Add("RateLimit-Reset", strconv.FormatInt(int64(d.Seconds()), 10))
+		w.Write([]byte("1015 - You are being rate limited (" + strconv.FormatInt(int64(d.Seconds()), 10) + ")."))
+		return
+	}
+
+	/*
+		Check for token or for guest
+	*/
 
 	if token == "" {
+		token = r.Header.Get("X-Real-Ip")
 		if _, ok := ratelimits[token]; !ok {
 			ratelimits[token] = ratelimit.NewBucket(30*time.Second, 1)
 		}
@@ -62,12 +85,16 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	/*
+		Applies second rate limiter : token based
+	*/
+
 	if ratelimits[token].Available() == 0 {
 		w.WriteHeader(http.StatusTooManyRequests)
 		w.Write([]byte("1015 - You are being rate limited."))
 		return
 	}
-	d := ratelimits[token].Take(1)
+	d = ratelimits[token].Take(1)
 	if d > 0 {
 		w.WriteHeader(http.StatusTooManyRequests)
 		w.Header().Add("RateLimit-Reset", strconv.FormatInt(int64(d.Seconds()), 10))

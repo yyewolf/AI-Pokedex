@@ -16,6 +16,7 @@ import (
 
 var calls int
 var ratelimits map[string]*ratelimit.Bucket
+var iplimits map[string]*ratelimit.Bucket
 
 var dbpswd = "ftT6A4MrF6hPt"
 
@@ -55,6 +56,7 @@ func init() {
 func main() {
 	go hostService()
 	ratelimits = make(map[string]*ratelimit.Bucket)
+	iplimits = make(map[string]*ratelimit.Bucket)
 	// Wait here until CTRL-C or other term signal is received.
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
