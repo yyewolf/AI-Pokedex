@@ -1,7 +1,7 @@
 import os
 import requests
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageChops
 from io import BytesIO
 import time
 import asyncio
@@ -9,11 +9,13 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import logging
 import tensorflow as tf
 import cv2
+import json
+import smartcrop
+from scipy import ndimage
 
 tf.config.threading.set_inter_op_parallelism_threads(2)
 tf.config.threading.set_intra_op_parallelism_threads(6)
 #import pickle
-#import smartcrop
 #from pathlib import Path
 
 #sc = smartcrop.SmartCrop()
@@ -55,6 +57,7 @@ tf.config.threading.set_intra_op_parallelism_threads(6)
 
 classes = np.load("static/classes.npy")
 names = np.load("static/names.npy")
+ids = np.load("static/ids.npy")
 
 model = tf.keras.models.load_model('static/model.h5')
 # model.save_weights("static/weights_only.h5")
@@ -62,9 +65,11 @@ model = tf.keras.models.load_model('static/model.h5')
 # with open('static/model_config.json', 'w') as json_file:
     # json_file.write(json_config)
     
-def harmonize(val, maxi):
+def harmonize(val, maxi, mini):
     if val < 0:
-        return int(0)
+        return mini
+    elif val < mini:
+        return mini
     elif val > maxi:
         return int(maxi)
     return val
@@ -77,92 +82,106 @@ def center_crop(img, new_width=None, new_height=None, center=None):
         right = left + new_width
         lower = upper + new_height
     else:
-        left = int(center[0]/2-new_width/2)
-        upper = int(center[1]/2-new_height/2)
+        left = int(center[0]-new_width/2)
+        upper = int(center[1]-new_height/2)
         right = left + new_width
         lower = upper + new_height
         
-    left = harmonize(left, img.size[0])
-    right = harmonize(right, img.size[0])
-    upper = harmonize(upper, img.size[1])
-    lower = harmonize(lower, img.size[1])
+    left = harmonize(left, img.size[0], 0)
+    right = harmonize(right, img.size[0], 0)
+    upper = harmonize(upper, img.size[1], 0)
+    lower = harmonize(lower, img.size[1], 0)
 
 
     im_cropped = img.crop((left, upper,right,lower))
     return im_cropped
 
+def find_center(img, th_min, th_max, blur):
+    im = np.array(img)
+    gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+    blur = cv2.GaussianBlur(gray, (blur, blur), 0)
+    
+    canny = cv2.Canny(blur, th_min, th_max)
+    #cv2.imwrite("img.jpg", canny)
+    
+    # pts = np.argwhere(canny>0)
+    # y1,x1 = pts.min(axis=0)
+    # y2,x2 = pts.max(axis=0)
+    
+    center = ndimage.measurements.center_of_mass(canny)
+    
+    #return (((x2+x1)//2),((y2+y1)//2))
+    return (center[1], center[0])
+
 # preprocessing and predicting function for test images:
 def predict_this(this_img):
     width, height = this_img.size
-    this_img2 = None
+    size = min(width, height)
     if width == 800 and height == 500:
-        this_img = center_crop(this_img, 550, 500)
-        #this_img = center_crop(this_img, 800, 500)
-        img = np.array(this_img)
-        img = cv2.flip(img, 1)
-        img = cv2.blur(img,(2,2))
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        blur = cv2.GaussianBlur(gray, (9, 9), 0)
-        canny = cv2.Canny(blur, 110, 190)
-
-        ## find the non-zero min-max coords of canny
-        pts = np.argwhere(canny>0)
-        y1,x1 = pts.min(axis=0)
-        y2,x2 = pts.max(axis=0)
-
-        ## crop the region
-        cropped = img[y1:y2, x1:x2]
-        this_img = Image.fromarray(cropped)
+        #center = ndimage.measurements.center_of_mass(np.array(this_img))
+        #this_img = center_crop(this_img, 600, 600, (center[1], center[0]))
+        this_img = center_crop(this_img, width*0.7, height*0.7)
+        center = find_center(this_img, 0, 200, 7)
+        this_img = center_crop(this_img, 450, 450, (center[0], center[1]))
+        width, height = this_img.size
+        size = min(width, height)
+        this_img = center_crop(this_img, size, size)
+        # #this_img = center_crop(this_img, 500, 500)
+        # sc = smartcrop.SmartCrop()
+        # result = sc.crop(this_img, 400, 400,
+            # prescale=True,
+            # max_scale=0.8,
+            # min_scale=0.7,
+            # scale_step=0.1,
+            # step=50
+        # )
+        # box = (
+            # result['top_crop']['x'],
+            # result['top_crop']['y'],
+            # result['top_crop']['width'] + result['top_crop']['x'],
+            # result['top_crop']['height'] + result['top_crop']['y']
+        # )
+        # this_img = this_img.crop(box)
+        # #cropped = nice_crop(this_img, 20, 250, 21)
+        # #this_img = Image.fromarray(cropped)s_img = center_crop(this_img, 500, 500)
+        # sc = smartcrop.SmartCrop()
+        # result = sc.crop(this_img, 400, 400,
+            # prescale=True,
+            # max_scale=0.8,
+            # min_scale=0.7,
+            # scale_step=0.1,
+            # step=50
+        # )
+        # box = (
+            # result['top_crop']['x'],
+            # result['top_crop']['y'],
+            # result['top_crop']['width'] + result['top_crop']['x'],
+            # result['top_crop']['height'] + result['top_crop']['y']
+        # )
+        # this_img = this_img.crop(box)
+        # #cropped = nice_crop(this_img, 20, 250, 21)
+        # #this_img = Image.fromarray(cropped)
         #this_img.save('test.jpg')
-    if width == 300 and height == 300:
-        #this_img = center_crop(this_img, 286, 287)
-        #this_img2 = center_crop(this_img, 270, 270)
-        
-        img = np.array(this_img)
-        img2 = img
-        img = cv2.flip(img, 1)
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        blur = cv2.GaussianBlur(gray, (5, 5), 0)
-        blur = cv2.blur(blur,(5,5))
-        canny = cv2.Canny(blur, 100, 200)
-
-        ## find the non-zero min-max coords of canny
-        pts = np.argwhere(canny>0)
-        y1,x1 = pts.min(axis=0)
-        y2,x2 = pts.max(axis=0)
-        x1,y1 = x1-70, y1-70
-        y2,x2 = x2+70, y2+70
-        
-        x1 = harmonize(x1, img.shape[0])
-        x2 = harmonize(x2, img.shape[0])
-        y1 = harmonize(y1, img.shape[1])
-        y2 = harmonize(y2, img.shape[1])
-
-        ## crop the region
-        cropped = img[y1:y2, x1:x2]
-        this_img = Image.fromarray(cropped)
-        cropped2 = img2[y1:y2, x1:x2]
-        this_img2 = Image.fromarray(cropped2)
-        #this_img.save('test1.jpg')
-        #this_img2.save('test2.jpg')
+    elif width == 300 and height == 300:
+        this_img = center_crop(this_img, width*0.9, height*0.9)
+        center = find_center(this_img, 0, 50, 21)
+        this_img = center_crop(this_img, 200, 200, (center[0], center[1]))
+    #if width == 300 and height == 300:
+        #cropped = nice_crop(this_img, 100, 200, 11)
+        #this_img = Image.fromarray(cropped)
+    #this_img.save('test.jpg')
     im = this_img.resize((160,160)) # size expected by network
     img_array = np.array(im)
     #img_array = img_array/255 # rescale pixel intensity as expected by network
     img_array = np.expand_dims(img_array, axis=0) # reshape from (160,160,3) to (1,160,160,3)
     pred = model(img_array)
     pred = tf.keras.activations.softmax(pred)
-    index = np.argmax(pred, axis=1).tolist()[0]
-    if this_img2 != None:
-        im2 = this_img2.resize((160,160)) # size expected by network
-        img_array2 = np.array(im2)
-        #img_array = img_array/255 # rescale pixel intensity as expected by network
-        img_array2 = np.expand_dims(img_array2, axis=0) # reshape from (160,160,3) to (1,160,160,3)
-        pred2 = model(img_array2)
-        pred2 = tf.keras.activations.softmax(pred2)
-        index2 = np.argmax(pred2, axis=1).tolist()[0]
-        if float(pred2[0][index2]) > float(pred[0][index]+0.14):
-            return index2, pred2[0][index2]
-    return index, pred[0][index]
+    indexes = np.argsort(pred, axis=1)[:,-3:]
+    indexes = indexes[0]
+    confidences = []
+    for i in indexes:
+        confidences.append(pred[0][i])
+    return indexes, confidences
 
 def identify(url):
     response = requests.get(url)
@@ -184,9 +203,15 @@ class myHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])
         url = self.rfile.read(content_length)
-        poke, conf = identify(url)
-        poke = names[int(classes[0][poke])]
-        confidence = round(float(conf*100), 2)
+        indexes, confidences = identify(url)
+        predictions = []
+        for i in range(len(indexes)-1,-1,-1) :
+            dicti = {
+                "name": names[int(classes[0][indexes[i]])],
+                "id": ids[int(classes[0][indexes[i]])],
+                "confidence": str(round(float(confidences[i]*100), 2)),
+            }
+            predictions.append(dicti)
         #confidence = conf
         self.send_response(200)
         self.send_header('Content-type','application/json')
@@ -194,8 +219,7 @@ class myHandler(BaseHTTPRequestHandler):
         # Send the html message
         self.wfile.write(
             "{"
-            f"\"name\":\"{poke}\","
-            f"\"confidence\":\"{confidence}%\","
+            f"\"predictions\":{json.dumps(predictions)},"
             f"\"image url\":\"{url}\""
             "}".encode("utf-8")
         )
@@ -203,11 +227,14 @@ class myHandler(BaseHTTPRequestHandler):
 
 def test(urls):
     for i in urls:
-        poke, conf = identify(i)
-        poke = names[int(classes[0][poke])]
-        print(poke)
+        indexes, confidences = identify(i)
+        txt = ""
+        for j in range(len(indexes)-1,-1,-1) :
+            txt += names[int(classes[0][indexes[j]])]+" "
+        print(txt)
         
 urls = [
+    "https://media.discordapp.net/attachments/781495172893900830/836600106332454913/pokemon.jpg", #Steelix
     "https://media.discordapp.net/attachments/781495172893900830/835782731106353162/pokemon.jpg", #Buizel
     "https://media.discordapp.net/attachments/781495172893900830/835613729370144838/pokemon.jpg", #Beldum
     "https://media.discordapp.net/attachments/781495172893900830/835613729370144838/pokemon.jpg", #Beldum
@@ -215,6 +242,7 @@ urls = [
     "https://cdn.discordapp.com/attachments/781495172893900830/835720117449916426/pokemon.jpg", #Dugtrio
     "https://cdn.discordapp.com/attachments/781495172893900830/835536417496760410/pokemon.jpg", #Zubat
     "https://cdn.discordapp.com/attachments/781495172893900830/835120085424799745/pokemon.jpg", #Nidoran
+    "https://media.discordapp.net/attachments/834182037501902849/837435010474573824/pokemon.jpg", #Nidoran
     "https://cdn.discordapp.com/attachments/781495172893900830/834384560690561024/pokemon.jpg", #Munna
     "https://cdn.discordapp.com/attachments/781495172893900830/834381170682101780/pokemon.jpg", #Abra
     "https://cdn.discordapp.com/attachments/781495172893900830/832983149087686677/pokemon.jpg", #Eevee
@@ -226,6 +254,8 @@ urls = [
     "https://media.discordapp.net/attachments/781495172893900830/835439388544335902/pokemon.jpg", #Grimer
     "https://media.discordapp.net/attachments/781495172893900830/835440053765406730/pokemon.jpg", #Arcanine 
     "https://media.discordapp.net/attachments/781495172893900830/835351230959845386/pokemon.jpg", #Noibat 
+    "https://media.discordapp.net/attachments/832314403042885732/837340044707758110/pokemon.jpg", #Rufflet
+    "https://media.discordapp.net/attachments/832314573041434694/837616651784552468/pokemon.jpg", #Litten
     
     "https://media.discordapp.net/attachments/834182037501902849/834338255008170064/spawn.png", #Sirfetch'd 
     "https://media.discordapp.net/attachments/834182037501902849/834313661186834492/spawn.png", #Morelull 
@@ -233,6 +263,9 @@ urls = [
     "https://media.discordapp.net/attachments/797874693293211668/833605314829484102/spawn.png", #Metang 
     "https://media.discordapp.net/attachments/834182037501902849/834382306869116928/spawn.png", #Ambipom 
     "https://media.discordapp.net/attachments/834182037501902849/834357940584579102/spawn.png", #Glaceon 
+    "https://cdn.discordapp.com/attachments/834182037501902849/837403747654303744/spawn.png", #Dubwool
+    "https://cdn.discordapp.com/attachments/834182037501902849/837402089306587247/spawn.png", #Indeedee Female
+    "https://cdn.discordapp.com/attachments/834182037501902849/837395803282079774/spawn.png", #Arrokuda
 ]
 
 #test(urls)

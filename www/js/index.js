@@ -67,8 +67,8 @@ function set() {
 					<div class="card text-white bg-dark mb-3" style="max-width: 18rem;">
 					  <div class="card-body">
 						<img class="card-img-top" src="${data["image url"]}" alt="If you see this, check your URL">
-						<h5 class="card-title">${data["name"]}</h5>
-						<p class="card-text">${data["confidence"]} confidence.</p>
+						<h5 class="card-title">${data["predictions"][0]["name"]}</h5>
+						<p class="card-text">${data["predictions"][0]["confidence"]}% confidence.</p>
 					  </div>
 					</div>
 				`)
