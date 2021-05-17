@@ -1,8 +1,12 @@
 package main
 
 import (
+	"context"
 	"database/sql"
+	"fmt"
 	_ "image/jpeg"
+	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -10,6 +14,8 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/juju/ratelimit"
+	"github.com/plutov/paypal/v4"
+	ipn "github.com/webhookrelay/paypal-ipn"
 	"gopkg.in/mgutz/dat.v2/dat"
 	runner "gopkg.in/mgutz/dat.v2/sqlx-runner"
 )
@@ -19,6 +25,10 @@ var ratelimits map[string]*ratelimit.Bucket
 var iplimits map[string]*ratelimit.Bucket
 
 var dbpswd = "ftT6A4MrF6hPt"
+
+var canProcessPaypal = true
+
+var paypalClient *paypal.Client
 
 // global database (pooling provided by SQL driver)
 var database *runner.DB
@@ -51,12 +61,36 @@ func init() {
 	runner.LogQueriesThreshold = 500 * time.Millisecond
 
 	database = runner.NewDB(db, "postgres")
+
 }
 
 func main() {
 	go hostService()
 	ratelimits = make(map[string]*ratelimit.Bucket)
 	iplimits = make(map[string]*ratelimit.Bucket)
+
+	//Connect to paypal
+	var err error
+	paypalClient, err = paypal.NewClient(paypalClientID, paypalClientSecret, paypal.APIBaseLive)
+	if err != nil {
+		fmt.Println("Error connecting to Paypal")
+		canProcessPaypal = false
+	}
+	paypalClient.SetLog(os.Stdout) // Set log to terminal stdout
+	paypalClient.GetAccessToken(context.Background())
+
+	mux := http.NewServeMux()
+	srv := http.Server{
+		Addr:    ":8080",
+		Handler: mux,
+	}
+
+	listener := ipn.New(false)
+
+	mux.Handle("/", listener.WebhooksHandler(paypalWebhook))
+	log.Println("server starting on :8080")
+
+	go srv.ListenAndServe()
 	// Wait here until CTRL-C or other term signal is received.
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)

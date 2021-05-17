@@ -38,13 +38,45 @@ func adminArea(w http.ResponseWriter, r *http.Request) {
 func findPoke(w http.ResponseWriter, r *http.Request) {
 	url := r.FormValue("url")
 	token := r.FormValue("token")
-	calls++
+	model := r.FormValue("model")
+
+	if model != "background" {
+		model = "classic"
+	}
 
 	u := getUserByToken(token)
+
+	/*
+		If the person is using the web version and connected it will use their token
+	*/
+
+	session, err := store.Get(r, "cookie-name")
+	if err == nil {
+		var val interface{}
+		var ok bool
+		if val, ok = session.Values["user"]; ok {
+			user := val.(cookieUser)
+			u = getUserByEmail(user.Email)
+			token = u.Token
+		}
+	}
+
+	/*
+		If the request is from Pokeboat
+	*/
+
+	if r.Header.Get("***REMOVED***") != "" {
+		u.Email = "***REMOVED***"
+	}
+
+	if r.Header.Get("***REMOVED***") == "dataset" {
+		u.Email = "***REMOVED***"
+	}
+
 	/*
 		Applies the first rate limiter : IP based
 	*/
-	if u.Email != "***REMOVED***" && u.Email != "***REMOVED***" {
+	if u.Email != "***REMOVED***" && u.Email != "***REMOVED***" && u.Email != "***REMOVED***" {
 		IP := r.Header.Get("X-Real-Ip")
 		if _, ok := iplimits[IP]; !ok {
 			iplimits[IP] = ratelimit.NewBucket(2*time.Second, 1)
@@ -70,19 +102,23 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 	if token == "" {
 		token = r.Header.Get("X-Real-Ip")
 		if _, ok := ratelimits[token]; !ok {
-			ratelimits[token] = ratelimit.NewBucket(30*time.Second, 1)
+			ratelimits[token] = ratelimit.NewBucket(120*time.Second, 1)
 		}
 	} else {
-		if !tokenExist(token) {
+		if !tokenExist(token) && u.Email != "***REMOVED***" {
 			w.WriteHeader(http.StatusNotAcceptable)
 			w.Write([]byte("403 - Access denied."))
 			return
 		}
+		//People can use their account as well as ***REMOVED***
+		if u.Email == "***REMOVED***" {
+			token = token + "-***REMOVED***"
+		}
 		if _, ok := ratelimits[token]; !ok {
 			if u.Paid {
-				ratelimits[token] = ratelimit.NewBucket(5*time.Second, 1)
+				ratelimits[token] = ratelimit.NewBucket(90*time.Second, 1)
 			} else {
-				ratelimits[token] = ratelimit.NewBucket(10*time.Second, 1)
+				ratelimits[token] = ratelimit.NewBucket(30*time.Second, 1)
 			}
 		}
 	}
@@ -114,7 +150,15 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := http.Post("http://127.0.0.1:5300", "", strings.NewReader(url))
+	req, err := http.NewRequest("POST", "http://127.0.0.1:5300", strings.NewReader(url))
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("500 - Recognition API is offline."))
+		return
+	}
+	req.Header.Set("Content-Type", "")
+	req.Header.Set("Model", model)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("500 - Recognition API is offline."))
@@ -127,6 +171,7 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 	response = strings.ReplaceAll(response, "'", "")
 
 	if response != "" {
+		calls++
 		w.Header().Add("Content-Type", "application/json")
 		fmt.Fprint(w, response)
 	} else {

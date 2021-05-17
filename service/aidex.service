@@ -8,12 +8,7 @@ ExecStart=/root/aipokedex/AIDex
 Restart=always
 RestartSec=1
 
- # Output to syslog
-StandardOutput=syslog
-StandardError=syslog
 SyslogIdentifier=ai-dex
-#User=<alternate user>
-#Group=<alternate group>
 
 [Install]
 # Components of this application should be started at boot time

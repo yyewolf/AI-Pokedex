@@ -8,9 +8,6 @@ ExecStart=/usr/bin/python3 /root/aipokedex/static/kerasmodel.py
 Restart=always
 RestartSec=1
 
- # Output to syslog
-StandardOutput=syslog
-StandardError=syslog
 SyslogIdentifier=ai-dex
 #User=<alternate user>
 #Group=<alternate group>

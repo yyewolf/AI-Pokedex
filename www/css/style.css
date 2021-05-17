@@ -1,21 +1,35 @@
 .main-navbar {
-	background-color: #ea3d3d !important;
+	background-color: #610606 !important;
 }
 
 .main-jumbo {
-	background-color: #5d5050 !important;
+	background-color: #2c2f33 !important;
 }
 
 .url-input {
-	background-color: #887a70 !important;
+	background-color: #2c2f33 !important;
 }
 
+.input-box {
+	background-color: #434446 !important;
+	border: 1px solid #4c4f53 !important;
+}
+
+footer {
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+}
 .input-width {
 	width: -webkit-fill-available !important;
 }
 
+input {
+	color:white !important;
+}
+
 body {
-	background-color: #5d5050 !important;
+	background-color: #2c2f33 !important;
 	color: #ffffff !important;
 }
 

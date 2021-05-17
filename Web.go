@@ -54,6 +54,7 @@ func hostService() {
 	mux.Get("/login", compressHandler(http.HandlerFunc(login)))
 	mux.Get("/signup", compressHandler(http.HandlerFunc(signup)))
 	mux.Get("/refreshToken", compressHandler(http.HandlerFunc(refreshToken)))
+	mux.Get("/pay", compressHandler(http.HandlerFunc(payHandler)))
 
 	mux.Get("/", compressHandler(http.HandlerFunc(indexHandler)))
 
@@ -104,7 +105,12 @@ func signup(w http.ResponseWriter, r *http.Request) {
 			dat := string(datb)
 			dat = strings.ReplaceAll(dat, "{Token}", u.Token)
 			dat = strings.ReplaceAll(dat, "{Email}", u.Email)
-			dat = strings.ReplaceAll(dat, "{Paid}", strconv.FormatBool(u.Paid))
+
+			paidstring := ""
+			if !u.Paid {
+				paidstring = `<a href ="pay"><i class="fa fa-paypal"></i></a>`
+			}
+			dat = strings.ReplaceAll(dat, "{Paid}", strconv.FormatBool(u.Paid)+". "+paidstring)
 			fmt.Fprint(w, dat)
 			return
 		}
@@ -192,7 +198,12 @@ func signup(w http.ResponseWriter, r *http.Request) {
 	dat := string(datb)
 	dat = strings.ReplaceAll(dat, "{Token}", newUser.Token)
 	dat = strings.ReplaceAll(dat, "{Email}", newUser.Email)
-	dat = strings.ReplaceAll(dat, "{Paid}", strconv.FormatBool(newUser.Paid))
+
+	paidstring := ""
+	if !newUser.Paid {
+		paidstring = `<a href ="pay"><i class="fa fa-paypal"></i></a>`
+	}
+	dat = strings.ReplaceAll(dat, "{Paid}", strconv.FormatBool(newUser.Paid)+". "+paidstring)
 	fmt.Fprint(w, dat)
 }
 
@@ -213,7 +224,12 @@ func login(w http.ResponseWriter, r *http.Request) {
 			dat := string(datb)
 			dat = strings.ReplaceAll(dat, "{Token}", u.Token)
 			dat = strings.ReplaceAll(dat, "{Email}", u.Email)
-			dat = strings.ReplaceAll(dat, "{Paid}", strconv.FormatBool(u.Paid))
+
+			paidstring := ""
+			if !u.Paid {
+				paidstring = `<a href ="pay"><i class="fa fa-paypal"></i></a>`
+			}
+			dat = strings.ReplaceAll(dat, "{Paid}", strconv.FormatBool(u.Paid)+". "+paidstring)
 			fmt.Fprint(w, dat)
 			return
 		}
@@ -257,11 +273,16 @@ func login(w http.ResponseWriter, r *http.Request) {
 
 	err = session.Save(r, w)
 
+	paidstring := ""
+	if !u.Paid {
+		paidstring = `<a href ="pay"><i class="fa fa-paypal"></i></a>`
+	}
+
 	datb, _ := webbox.ReadFile("www/connected.html")
 	dat := string(datb)
 	dat = strings.ReplaceAll(dat, "{Token}", u.Token)
 	dat = strings.ReplaceAll(dat, "{Email}", u.Email)
-	dat = strings.ReplaceAll(dat, "{Paid}", strconv.FormatBool(u.Paid))
+	dat = strings.ReplaceAll(dat, "{Paid}", strconv.FormatBool(u.Paid)+". "+paidstring)
 	fmt.Fprint(w, dat)
 }
 

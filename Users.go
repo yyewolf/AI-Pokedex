@@ -8,14 +8,15 @@ import (
 )
 
 type User struct {
-	ID       string `json:"id" db:"id"`
-	Email    string `json:"email" db:"email"`
-	Password string `json:"password" db:"password"`
-	Token    string `json:"token" db:"token"`
-	Paid     bool   `json:"paid" db:"paid"`
-	LastPaid int64  `json:"last_paid" db:"last_paid"`
-	Euros    int    `json:"euros" db:"euros"`
-	Cents    int    `json:"cents" db:"cents"`
+	ID             string `json:"id" db:"id"`
+	Email          string `json:"email" db:"email"`
+	Password       string `json:"password" db:"password"`
+	Token          string `json:"token" db:"token"`
+	Paid           bool   `json:"paid" db:"paid"`
+	LastPaid       int64  `json:"last_paid" db:"last_paid"`
+	Euros          int    `json:"euros" db:"euros"`
+	Cents          int    `json:"cents" db:"cents"`
+	SubscriptionID string `json:"sub_id" db:"sub_id"`
 }
 
 func generateSecureToken(length int) string {
@@ -73,6 +74,20 @@ func getUserByEmail(email string) User {
 	d, _ := database.Select("*").
 		From("accounts").
 		Where("email=$1", email).
+		QueryJSON()
+
+	e := json.Unmarshal(d, &u)
+	if e != nil {
+		return User{}
+	}
+	return u[0]
+}
+
+func getUserBySubID(id string) User {
+	var u []User
+	d, _ := database.Select("*").
+		From("accounts").
+		Where("sub_id=$1", id).
 		QueryJSON()
 
 	e := json.Unmarshal(d, &u)
