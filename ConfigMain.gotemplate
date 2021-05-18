@@ -1,0 +1,22 @@
+package main
+
+var paypalClientID = "STRING"
+
+var paypalClientSecret = "STRING"
+
+var adminPass = "STRING"
+
+var priviledgedIP = list{
+	"STRING",
+	"STRING",
+	"STRING",
+}
+
+var priviledgedToken = list{
+	"STRING",
+	"STRING",
+}
+
+// Reserved for special users
+var specialEmail = "STRING"
+var specialHeader = "STRING"

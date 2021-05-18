@@ -16,7 +16,7 @@ func adminArea(w http.ResponseWriter, r *http.Request) {
 	paid := r.FormValue("paid")
 	pswd := r.FormValue("pswd")
 
-	if pswd != "***REMOVED***" {
+	if pswd != adminPass {
 		return
 	}
 
@@ -65,18 +65,18 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 		If the request is from Pokeboat
 	*/
 
-	if r.Header.Get("***REMOVED***") != "" {
+	if r.Header.Get(specialHeader) != "" {
 		u.Email = "***REMOVED***"
 	}
 
-	if r.Header.Get("***REMOVED***") == "dataset" {
+	if r.Header.Get(specialHeader) == "dataset" {
 		u.Email = "***REMOVED***"
 	}
 
 	/*
 		Applies the first rate limiter : IP based
 	*/
-	if u.Email != "***REMOVED***" && u.Email != "***REMOVED***" && u.Email != "***REMOVED***" {
+	if !priviledgedIP.Has(u.Email) {
 		IP := r.Header.Get("X-Real-Ip")
 		if _, ok := iplimits[IP]; !ok {
 			iplimits[IP] = ratelimit.NewBucket(2*time.Second, 1)
@@ -105,14 +105,14 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 			ratelimits[token] = ratelimit.NewBucket(120*time.Second, 1)
 		}
 	} else {
-		if !tokenExist(token) && u.Email != "***REMOVED***" {
+		if !tokenExist(token) && u.Email != specialEmail {
 			w.WriteHeader(http.StatusNotAcceptable)
 			w.Write([]byte("403 - Access denied."))
 			return
 		}
 		//People can use their account as well as ***REMOVED***
-		if u.Email == "***REMOVED***" {
-			token = token + "-***REMOVED***"
+		if u.Email == specialEmail {
+			token = token + specialEmail
 		}
 		if _, ok := ratelimits[token]; !ok {
 			if u.Paid {
@@ -127,7 +127,7 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 		Applies second rate limiter : token based
 	*/
 
-	if u.Email != "***REMOVED***" && u.Email != "***REMOVED***" {
+	if priviledgedToken.Has(u.Email) {
 		if ratelimits[token].Available() == 0 {
 			w.WriteHeader(http.StatusTooManyRequests)
 			w.Write([]byte("1015 - You are being rate limited."))
