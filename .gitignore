@@ -1,4 +1,4 @@
-
+ConfigMain.go
 *.bat
 .vscode/settings.json
 static/pokemodel.pth
