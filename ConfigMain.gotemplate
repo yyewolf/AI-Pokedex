@@ -20,3 +20,6 @@ var priviledgedToken = list{
 // Reserved for special users
 var specialEmail = "STRING"
 var specialHeader = "STRING"
+
+// Constants
+var adminMail = "STRING"

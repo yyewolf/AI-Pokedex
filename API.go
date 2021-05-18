@@ -66,11 +66,11 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 	*/
 
 	if r.Header.Get(specialHeader) != "" {
-		u.Email = "***REMOVED***"
+		u.Email = specialEmail
 	}
 
 	if r.Header.Get(specialHeader) == "dataset" {
-		u.Email = "***REMOVED***"
+		u.Email = adminMail
 	}
 
 	/*
@@ -110,7 +110,7 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("403 - Access denied."))
 			return
 		}
-		//People can use their account as well as ***REMOVED***
+		//People can use their account as well as pokeboat
 		if u.Email == specialEmail {
 			token = token + specialEmail
 		}
