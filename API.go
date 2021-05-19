@@ -127,7 +127,7 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 		Applies second rate limiter : token based
 	*/
 
-	if priviledgedToken.Has(u.Email) {
+	if !priviledgedToken.Has(u.Email) {
 		if ratelimits[token].Available() == 0 {
 			w.WriteHeader(http.StatusTooManyRequests)
 			w.Write([]byte("1015 - You are being rate limited."))
