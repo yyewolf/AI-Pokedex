@@ -262,7 +262,7 @@ urls = [
     "https://media.discordapp.net/attachments/834182037501902849/843819927130603560/spawn.png", #Audino
 ]
 
-test(urls)
+#test(urls)
 
 print("Opening HTTP server")
 # Wait forever for incoming http requests
