@@ -116,9 +116,9 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 		}
 		if _, ok := ratelimits[token]; !ok {
 			if u.Paid {
-				ratelimits[token] = ratelimit.NewBucket(90*time.Second, 1)
+				ratelimits[token] = ratelimit.NewBucket(20*time.Second, 1)
 			} else {
-				ratelimits[token] = ratelimit.NewBucket(30*time.Second, 1)
+				ratelimits[token] = ratelimit.NewBucket(90*time.Second, 1)
 			}
 		}
 	}
