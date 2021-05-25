@@ -102,7 +102,7 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 	if token == "" {
 		token = r.Header.Get("X-Real-Ip")
 		if _, ok := ratelimits[token]; !ok {
-			ratelimits[token] = ratelimit.NewBucket(120*time.Second, 1)
+			ratelimits[token] = ratelimit.NewBucket(140*time.Second, 1)
 		}
 	} else {
 		if !tokenExist(token) && u.Email != specialEmail {
@@ -116,9 +116,9 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 		}
 		if _, ok := ratelimits[token]; !ok {
 			if u.Paid {
-				ratelimits[token] = ratelimit.NewBucket(20*time.Second, 1)
+				ratelimits[token] = ratelimit.NewBucket(30*time.Second, 1)
 			} else {
-				ratelimits[token] = ratelimit.NewBucket(90*time.Second, 1)
+				ratelimits[token] = ratelimit.NewBucket(100*time.Second, 1)
 			}
 		}
 	}

@@ -10,8 +10,8 @@ import cv2
 import json
 from scipy import ndimage
 
-tf.config.threading.set_inter_op_parallelism_threads(2)
-tf.config.threading.set_intra_op_parallelism_threads(6)
+tf.config.threading.set_inter_op_parallelism_threads(4)
+tf.config.threading.set_intra_op_parallelism_threads(12)
 
 ###########################
 #Loading the classic model#
