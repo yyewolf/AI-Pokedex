@@ -4,6 +4,8 @@ import numpy as np
 from PIL import Image, ImageChops
 from io import BytesIO
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from socketserver import ThreadingMixIn
+import threading
 import tensorflow as tf
 from tensorflow.keras import layers, models
 import cv2
@@ -215,8 +217,16 @@ class HTTPHandler(BaseHTTPRequestHandler):
             "}".encode("utf-8")
         )
 
-port = 5300
-server = HTTPServer(('', port), HTTPHandler)
+class ThreadingSimpleServer(ThreadingMixIn, HTTPServer):
+    pass
+
+def run():
+    server = ThreadingSimpleServer(('0.0.0.0', 5300), HTTPHandler)
+    server.serve_forever()
+
+
+if __name__ == '__main__':
+    run()
 
 def test(urls):
     for i in urls:
