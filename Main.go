@@ -15,6 +15,7 @@ import (
 	"github.com/bwmarrin/snowflake"
 	"github.com/juju/ratelimit"
 	"github.com/plutov/paypal/v4"
+	"github.com/pmylund/go-cache"
 	ipn "github.com/webhookrelay/paypal-ipn"
 	"gopkg.in/mgutz/dat.v2/dat"
 	runner "gopkg.in/mgutz/dat.v2/sqlx-runner"
@@ -34,6 +35,8 @@ var paypalClient *paypal.Client
 var database *runner.DB
 
 var node *snowflake.Node
+
+var urlcache *cache.Cache
 
 func init() {
 	// create a normal database connection through database/sql
@@ -66,6 +69,9 @@ func init() {
 
 func main() {
 	go hostService()
+
+	urlcache = cache.New(5*time.Minute, 10*time.Minute)
+
 	ratelimits = make(map[string]*ratelimit.Bucket)
 	iplimits = make(map[string]*ratelimit.Bucket)
 

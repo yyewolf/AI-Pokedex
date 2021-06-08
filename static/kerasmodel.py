@@ -12,7 +12,7 @@ import cv2
 import json
 from scipy import ndimage
 
-tf.config.threading.set_inter_op_parallelism_threads(4)
+tf.config.threading.set_inter_op_parallelism_threads(8)
 tf.config.threading.set_intra_op_parallelism_threads(12)
 
 ###########################
@@ -36,12 +36,40 @@ model_classic = tf.keras.models.Sequential(layers)
 #Loading the poketwo model#
 ###########################
 
+# from pathlib import Path
+
+# d = "static/dataset maker/finalset"
+# data_dir = Path(d)
+# class_names = np.array(
+    # sorted([item.name for item in data_dir.glob("*") if item.name != "LICENSE.txt"])
+# )
+# classes = [class_names]
+# classes[0].sort()
+
+# with open("static/output.csv", encoding="utf-8") as f:
+    # content = f.readlines()
+    
+# names = {}
+# ids = {}
+# for i in content:
+    # names[int(i.split(',')[0])] = i.split(',')[2]
+    # ids[int(i.split(',')[0])] = i.split(',')[1]
+
+# np.save("static/classes.npy", np.array(classes))
+# np.save("static/names.npy", np.array(names))
+# np.save("static/ids.npy", np.array(ids))
+
 classes_poketwo = np.load("static/poketwo/classes.npy", allow_pickle=True)
 names_poketwo = np.load("static/poketwo/names.npy", allow_pickle=True)
 ids_poketwo = np.load("static/poketwo/ids.npy", allow_pickle=True)
 
 names_poketwo = dict(enumerate(names_poketwo.flatten(), 1))[1]
+    
 ids_poketwo = dict(enumerate(ids_poketwo.flatten(), 1))[1]
+
+# ids_poketwo = ids
+# names_poketwo = names
+# classes_poketwo = classes
 
 model_poketwo = tf.keras.models.load_model('static/poketwo/model.h5')
 layers = []
@@ -120,7 +148,7 @@ def post_classic(img):
     elif width == 300 and height == 300:
         img = center_crop(img, width*0.9, height*0.9) # Empirical parameters found that worked best through tests
         center = find_center(img, 0, 50, 21) # Empirical parameters found that worked best through tests
-        img = center_crop(img, 200, 200, (center[0], center[1]))
+        img = center_crop(img, 250, 250, (center[0], center[1]))
 
     # Optional save used for debugging
     #this_img.save('test.jpg')
@@ -149,14 +177,16 @@ def identify_classic(url):
     index, conf = predict_this_classic(_img)
     return index, conf
     
-def predict_this_poketwo(this_img):
-    width, height = this_img.size
+def predict_this_poketwo(img):
+    width, height = img.size
     if width == 800 and height == 500:
-        this_img = center_crop(this_img, 800, 480)
+        img = center_crop(img, 800, 480)
     elif width == 300 and height == 300:
-        center = find_center(this_img, 0, 50, 21) # Empirical parameters found that worked best through tests
-        this_img = center_crop(this_img, 180, 180, (center[0], center[1]))
-    im = this_img.resize((160,160)) # size expected by network
+        center = find_center(img, 0, 50, 21) # Empirical parameters found that worked best through tests
+        img = center_crop(img, 160, 160, (center[0], center[1]))
+    #img.save('test.jpg')
+    im = img.resize((160,160)) # size expected by network
+    im = img.resize((160,160)) # size expected by network
     img_array = np.array(im)
     img_array = np.expand_dims(img_array, axis=0) # reshape from (160,160,3) to (1,160,160,3)
     pred = model_poketwo(img_array)
@@ -224,17 +254,18 @@ def run():
     server = ThreadingSimpleServer(('0.0.0.0', 5300), HTTPHandler)
     server.serve_forever()
 
-
-if __name__ == '__main__':
-    run()
-
 def test(urls):
     for i in urls:
         indexes, confidences = identify_poketwo(i)
         txt = ""
         for j in range(len(indexes)-1,-1,-1) :
-            txt += names_poketwo[int(classes_poketwo[0][indexes[j]])]+" "
+            txt += names_poketwo[int(classes_poketwo[0][indexes[j]])]+" ("+str(round(float(confidences[j]*100), 2))+"%) ; "
         print(txt)
+        # indexes, confidences = identify_classic(i)
+        # txt = ""
+        # for j in range(len(indexes)-1,-1,-1) :
+            # txt += names_classic[int(classes_classic[0][indexes[j]])]+" ("+str(round(float(confidences[j]*100), 2))+"%) ; "
+        # print(txt)
 
 urls = [
     "https://media.discordapp.net/attachments/781495172893900830/836600106332454913/pokemon.jpg", #Steelix
@@ -259,6 +290,8 @@ urls = [
     "https://media.discordapp.net/attachments/781495172893900830/835351230959845386/pokemon.jpg", #Noibat 
     "https://media.discordapp.net/attachments/832314403042885732/837340044707758110/pokemon.jpg", #Rufflet
     "https://media.discordapp.net/attachments/832314573041434694/837616651784552468/pokemon.jpg", #Litten
+    "https://media.discordapp.net/attachments/845618707677708300/849030000698982440/pokemon.jpg", #Anniversary Wooloo
+    "https://images-ext-2.discordapp.net/external/NlC8nwSJyPS4DqjFvokXkX6TGVixpvdKhy8jldiLBdQ/%3Fv%3D26/https/assets.poketwo.net/images/50015.png", #Anniversary Wooloo
     
     "https://media.discordapp.net/attachments/834182037501902849/834338255008170064/spawn.png", #Sirfetch'd 
     "https://media.discordapp.net/attachments/834182037501902849/834313661186834492/spawn.png", #Morelull 
@@ -270,10 +303,15 @@ urls = [
     "https://cdn.discordapp.com/attachments/834182037501902849/837402089306587247/spawn.png", #Indeedee Female
     "https://cdn.discordapp.com/attachments/834182037501902849/837395803282079774/spawn.png", #Arrokuda
     "https://media.discordapp.net/attachments/834182037501902849/843819927130603560/spawn.png", #Audino
+    "https://media.discordapp.net/attachments/846463058322784306/847367208341340173/spawn.png", #Clawitzer
+    "https://media.discordapp.net/attachments/846463058322784306/847073404543827988/spawn.png", #Beedrill
+    "https://i.imgur.com/RX2OL6S.png", #Beedrill
 ]
 
-#test(urls)
-
+if __name__ == '__main__':
+    #test(urls)
+    run()
+    
 print("Opening HTTP server")
 # Wait forever for incoming http requests
 server.serve_forever()

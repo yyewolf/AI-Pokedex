@@ -23,6 +23,7 @@ require (
 	github.com/mgutz/logxi v0.0.0-20161027140823-aebf8a7d67ab // indirect
 	github.com/mgutz/str v1.2.0 // indirect
 	github.com/mgutz/to v1.0.0 // indirect
+	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/plutov/paypal/v4 v4.1.0
 	github.com/pmylund/go-cache v2.1.0+incompatible // indirect
 	github.com/satori/go.uuid v1.2.0 // indirect

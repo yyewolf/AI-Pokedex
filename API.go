@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/juju/ratelimit"
+	"github.com/pmylund/go-cache"
 )
 
 func adminArea(w http.ResponseWriter, r *http.Request) {
@@ -150,6 +151,15 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if x, found := urlcache.Get(url); found {
+		calls++
+		response := x.(string)
+
+		w.Header().Add("Content-Type", "application/json")
+		fmt.Fprint(w, response)
+		return
+	}
+
 	req, err := http.NewRequest("POST", "http://127.0.0.1:5300", strings.NewReader(url))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -172,6 +182,7 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 
 	if response != "" {
 		calls++
+		urlcache.Set(url, response, cache.DefaultExpiration)
 		w.Header().Add("Content-Type", "application/json")
 		fmt.Fprint(w, response)
 	} else {
