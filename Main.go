@@ -75,6 +75,9 @@ func main() {
 	ratelimits = make(map[string]*ratelimit.Bucket)
 	iplimits = make(map[string]*ratelimit.Bucket)
 
+	cacherecoveries = make(map[string]int)
+	recoveries = make(map[string]string)
+
 	//Connect to paypal
 	var err error
 	paypalClient, err = paypal.NewClient(paypalClientID, paypalClientSecret, paypal.APIBaseLive)

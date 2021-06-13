@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/badoux/checkmail"
+	emailverifier "github.com/AfterShip/email-verifier"
 	"github.com/gorilla/pat"
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
@@ -51,14 +51,39 @@ func hostService() {
 	mux.Post("/getPoke", compressHandler(http.HandlerFunc(findPoke)))
 	mux.Post("/login", compressHandler(http.HandlerFunc(login)))
 	mux.Post("/signup", compressHandler(http.HandlerFunc(signup)))
+	mux.Post("/changepass/{id}", compressHandler(http.HandlerFunc(changePassword)))
+	mux.Post("/forgotpass", compressHandler(http.HandlerFunc(forgotPassword)))
+	mux.Post("/admin", compressHandler(http.HandlerFunc(adminArea)))
 	mux.Get("/login", compressHandler(http.HandlerFunc(login)))
 	mux.Get("/signup", compressHandler(http.HandlerFunc(signup)))
 	mux.Get("/refreshToken", compressHandler(http.HandlerFunc(refreshToken)))
+	mux.Get("/resendMail", compressHandler(http.HandlerFunc(resendMail)))
 	mux.Get("/pay", compressHandler(http.HandlerFunc(payHandler)))
-
+	mux.Get("/emailverification/{id}", compressHandler(http.HandlerFunc(mailVerif)))
+	mux.Get("/changepass/{id}", compressHandler(http.HandlerFunc(changePassword)))
+	mux.Get("/forgotpass", compressHandler(http.HandlerFunc(forgotPassword)))
+	mux.Get("/logout", compressHandler(http.HandlerFunc(logout)))
 	mux.Get("/", compressHandler(http.HandlerFunc(indexHandler)))
 
 	go srv.ListenAndServe()
+}
+
+func formatConnected(u User, data string) string {
+	data = strings.ReplaceAll(data, "{Token}", u.Token)
+	data = strings.ReplaceAll(data, "{Email}", u.Email)
+
+	paidstring := ""
+	if !u.Paid {
+		paidstring = `<a href ="pay"><i class="fa fa-paypal"></i></a>`
+	}
+	data = strings.ReplaceAll(data, "{Paid}", strconv.FormatBool(u.Paid)+". "+paidstring)
+
+	verifstring := ""
+	if !u.Verified {
+		verifstring = `<a href ="resendMail"><i class="fa fa-refresh"></i></a>`
+	}
+	data = strings.ReplaceAll(data, "{Verified}", strconv.FormatBool(u.Verified)+". "+verifstring)
+	return data
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
@@ -88,6 +113,13 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+var (
+	verifier = emailverifier.
+		NewVerifier().
+		EnableSMTPCheck().
+		EnableAutoUpdateDisposable()
+)
+
 func signup(w http.ResponseWriter, r *http.Request) {
 	session, err := store.Get(r, "cookie-name")
 	if err == nil {
@@ -102,21 +134,21 @@ func signup(w http.ResponseWriter, r *http.Request) {
 			}
 			u := getUserByEmail(user.Email)
 			datb, _ := webbox.ReadFile("www/connected.html")
-			dat := string(datb)
-			dat = strings.ReplaceAll(dat, "{Token}", u.Token)
-			dat = strings.ReplaceAll(dat, "{Email}", u.Email)
-
-			paidstring := ""
-			if !u.Paid {
-				paidstring = `<a href ="pay"><i class="fa fa-paypal"></i></a>`
-			}
-			dat = strings.ReplaceAll(dat, "{Paid}", strconv.FormatBool(u.Paid)+". "+paidstring)
+			dat := formatConnected(u, string(datb))
 			fmt.Fprint(w, dat)
 			return
 		}
 	}
 	email := r.FormValue("email")
 	passwd := r.FormValue("password")
+
+	if r.ContentLength == 0 {
+		datb, _ := webbox.ReadFile("www/signup.html")
+		dat := string(datb)
+		dat = strings.ReplaceAll(dat, "{Error}", "")
+		fmt.Fprint(w, dat)
+		return
+	}
 
 	if emailExist(email) {
 		datb, _ := webbox.ReadFile("www/signup.html")
@@ -134,16 +166,10 @@ func signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = checkmail.ValidateHost(email)
-	if err != nil {
-		fmt.Println(err)
-	}
-	var (
-		serverHostName    = "ssl0.ovh.net"        // set your SMTP server here
-		serverMailAddress = "tristan@smagghe.com" // set your valid mail address here
-	)
-	err = checkmail.ValidateHostAndUser(serverHostName, serverMailAddress, email)
-	if _, ok := err.(checkmail.SmtpError); ok && err != nil {
+	domain := strings.Split(email, "@")[1]
+	username := strings.Split(email, "@")[0]
+	_, err = verifier.CheckSMTP(domain, username)
+	if err != nil || verifier.IsDisposable(domain) || strings.Contains(username, "+") {
 		datb, _ := webbox.ReadFile("www/signup.html")
 		dat := string(datb)
 		dat = strings.ReplaceAll(dat, "{Error}", "Invalid email")
@@ -195,15 +221,7 @@ func signup(w http.ResponseWriter, r *http.Request) {
 	err = session.Save(r, w)
 
 	datb, _ := webbox.ReadFile("www/connected.html")
-	dat := string(datb)
-	dat = strings.ReplaceAll(dat, "{Token}", newUser.Token)
-	dat = strings.ReplaceAll(dat, "{Email}", newUser.Email)
-
-	paidstring := ""
-	if !newUser.Paid {
-		paidstring = `<a href ="pay"><i class="fa fa-paypal"></i></a>`
-	}
-	dat = strings.ReplaceAll(dat, "{Paid}", strconv.FormatBool(newUser.Paid)+". "+paidstring)
+	dat := formatConnected(newUser, string(datb))
 	fmt.Fprint(w, dat)
 }
 
@@ -221,18 +239,17 @@ func login(w http.ResponseWriter, r *http.Request) {
 			}
 			u := getUserByEmail(user.Email)
 			datb, _ := webbox.ReadFile("www/connected.html")
-			dat := string(datb)
-			dat = strings.ReplaceAll(dat, "{Token}", u.Token)
-			dat = strings.ReplaceAll(dat, "{Email}", u.Email)
-
-			paidstring := ""
-			if !u.Paid {
-				paidstring = `<a href ="pay"><i class="fa fa-paypal"></i></a>`
-			}
-			dat = strings.ReplaceAll(dat, "{Paid}", strconv.FormatBool(u.Paid)+". "+paidstring)
+			dat := formatConnected(u, string(datb))
 			fmt.Fprint(w, dat)
 			return
 		}
+	}
+	if r.ContentLength == 0 {
+		datb, _ := webbox.ReadFile("www/login.html")
+		dat := string(datb)
+		dat = strings.ReplaceAll(dat, "{Error}", "")
+		fmt.Fprint(w, dat)
+		return
 	}
 	email := r.FormValue("email")
 	passwd := r.FormValue("password")
@@ -273,17 +290,18 @@ func login(w http.ResponseWriter, r *http.Request) {
 
 	err = session.Save(r, w)
 
-	paidstring := ""
-	if !u.Paid {
-		paidstring = `<a href ="pay"><i class="fa fa-paypal"></i></a>`
-	}
-
 	datb, _ := webbox.ReadFile("www/connected.html")
-	dat := string(datb)
-	dat = strings.ReplaceAll(dat, "{Token}", u.Token)
-	dat = strings.ReplaceAll(dat, "{Email}", u.Email)
-	dat = strings.ReplaceAll(dat, "{Paid}", strconv.FormatBool(u.Paid)+". "+paidstring)
+	dat := formatConnected(u, string(datb))
 	fmt.Fprint(w, dat)
+}
+
+func logout(w http.ResponseWriter, r *http.Request) {
+	session, _ := store.Get(r, "cookie-name")
+	session.Values["user"] = User{}
+	session.Options.MaxAge = -1
+	session.Save(r, w)
+	http.SetCookie(w, &http.Cookie{Name: "cookie-name"})
+	http.Redirect(w, r, "https://aipokedex.com/login", http.StatusSeeOther)
 }
 
 func refreshToken(w http.ResponseWriter, r *http.Request) {

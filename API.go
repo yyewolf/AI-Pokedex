@@ -14,7 +14,6 @@ import (
 
 func adminArea(w http.ResponseWriter, r *http.Request) {
 	email := r.FormValue("email")
-	paid := r.FormValue("paid")
 	pswd := r.FormValue("pswd")
 
 	if pswd != adminPass {
@@ -23,17 +22,13 @@ func adminArea(w http.ResponseWriter, r *http.Request) {
 
 	u := getUserByEmail(email)
 
-	b, err := strconv.ParseBool(paid)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("400 - Wrong boolean value."))
-		return
-	}
-
 	database.Update("accounts").
-		Set("paid", b).
+		Set("paid", true).
+		Set("last_paid", time.Now().Add(2190*time.Hour).Unix()).
 		Where("email=$1", u.Email).
 		Exec()
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("200 - OK"))
 }
 
 func findPoke(w http.ResponseWriter, r *http.Request) {
@@ -62,16 +57,31 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	if u.Paid && u.LastPaid != 0 && u.LastPaid < time.Now().Unix() {
+		database.Update("accounts").
+			Set("paid", true).
+			Set("last_paid", 0).
+			Where("email=$1", u.Email).
+			Exec()
+	}
+
+	if !u.Verified && u.Email != "" {
+		w.WriteHeader(http.StatusNotAcceptable)
+		w.Write([]byte("403 - Verify your email address to access this."))
+	}
+
 	/*
 		If the request is from Pokeboat
 	*/
 
 	if r.Header.Get(specialHeader) != "" {
 		u.Email = specialEmail
+		u.Verified = true
 	}
 
 	if r.Header.Get(specialHeader) == "dataset" {
 		u.Email = adminMail
+		u.Verified = true
 	}
 
 	/*
@@ -164,6 +174,7 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("500 - Recognition API is offline."))
+		ratelimits[token].Take(-1)
 		return
 	}
 	req.Header.Set("Content-Type", "")
@@ -172,6 +183,7 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("500 - Recognition API is offline."))
+		ratelimits[token].Take(-1)
 		return
 	}
 	defer resp.Body.Close()
@@ -188,6 +200,7 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 	} else {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("500 - Recognition API is offline."))
+		ratelimits[token].Take(-1)
 	}
 
 	/*

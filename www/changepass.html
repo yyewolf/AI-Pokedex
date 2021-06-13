@@ -18,9 +18,10 @@
 
     <!-- Bootstrap core CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" rel="stylesheet">
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
     <!-- Custom styles for this template -->
-    <link href="css/style.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <link href="/css/login.css" rel="stylesheet">
   </head>
 
   <body>
@@ -61,8 +62,7 @@
           </a>
 		  <div>
 			  <a type="button" href="https://paypal.me/yyewolf" class="btn btn-primary">Donations</a>
-			  <a type="button" href="logout"class="btn btn-secondary">Log out</a>
-			  <a type="button" href="./docs.html"class="btn btn-secondary">Documentation</a>
+			  <a type="button" href="/docs.html"class="btn btn-secondary">Documentation</a>
           </div>
         </div>
       </div>
@@ -72,18 +72,47 @@
 
       <section class="main-jumbo jumbotron text-center">
         <div class="container">
-          <h1 class="jumbotron-heading">Welcome to AI Pokedex.</h1>
-          <p class="lead">You are logged in with : {Email}.</p>
-          <p class="lead">Your token is  : {Token}. <a href ="refreshToken"><i class="fa fa-refresh"></i></a></p>
-          <p class="lead">Premium  : {Paid}</p>
-          <p class="lead">Email Verified  : {Verified}</p>
+          <h1 class="jumbotron-heading">Password Reset.</h1>
+          <p style="color:red">{Error} </p>
         </div>
       </section>
-	  
+
+      <div class="url-input album py-5 bg-light">
+        <div class="container">
+
+          <div class="row">
+		  
+            <div class="col-md-1">
+            </div>
+            <div class="col-md-10">
+				<form action="#" method="post">
+				  <div class="container">
+				  
+					<label for="password"><b>New Password</b></label>
+					<input class="input-box" type="password" placeholder="Enter Password" name="password" required>
+
+					<button type="submit">Reset password</button>
+				  </div>
+				</form>
+            </div>
+            <div class="col-md-1">
+            </div>
+			
+            <div class="col-md-4">
+            </div>
+            <div class="col-md-4" id="result">
+			
+            <div class="col-md-4">
+            </div>
+		  </div>
+		  
+		</div>
+	  </div>
+	</div>
     </main>    
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" integrity="sha384-+YQ4JLhjyBLPDQt//I+STsc9iw4uQqACwlvpslubQzn4u2UU2UFM80nGisd026JF" crossorigin="anonymous"></script>
-	<script src="js/index.js"></script>
+	<script src="/js/index.js"></script>
 	<footer>
 	  <div class="text-center p-3" style="background-color: rgba(0, 0, 0, 0.2);">
 		Contact me on Discord : Yewolf#0690

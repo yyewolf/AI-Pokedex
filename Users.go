@@ -17,6 +17,7 @@ type User struct {
 	Euros          int    `json:"euros" db:"euros"`
 	Cents          int    `json:"cents" db:"cents"`
 	SubscriptionID string `json:"sub_id" db:"sub_id"`
+	Verified       bool   `json:"verified" db:"verified"`
 }
 
 func generateSecureToken(length int) string {
@@ -88,6 +89,20 @@ func getUserBySubID(id string) User {
 	d, _ := database.Select("*").
 		From("accounts").
 		Where("sub_id=$1", id).
+		QueryJSON()
+
+	e := json.Unmarshal(d, &u)
+	if e != nil {
+		return User{}
+	}
+	return u[0]
+}
+
+func getUserByID(id string) User {
+	var u []User
+	d, _ := database.Select("*").
+		From("accounts").
+		Where("id=$1", id).
 		QueryJSON()
 
 	e := json.Unmarshal(d, &u)
