@@ -88,7 +88,7 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 		Applies the first rate limiter : IP based
 	*/
 	if !priviledgedIP.Has(u.Email) {
-		IP := r.Header.Get("X-Real-Ip")
+		IP := strings.Split(r.Header.Get("X-Real-Ip"), ":")[0]
 		if _, ok := iplimits[IP]; !ok {
 			iplimits[IP] = ratelimit.NewBucket(2*time.Second, 1)
 		}
@@ -111,7 +111,7 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 	*/
 
 	if token == "" {
-		token = r.Header.Get("X-Real-Ip")
+		token = strings.Split(r.Header.Get("X-Real-Ip"), ":")[0]
 		if _, ok := ratelimits[token]; !ok {
 			ratelimits[token] = ratelimit.NewBucket(140*time.Second, 1)
 		}
