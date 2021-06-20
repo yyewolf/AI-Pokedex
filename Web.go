@@ -318,9 +318,11 @@ func refreshToken(w http.ResponseWriter, r *http.Request) {
 
 	user := val.(cookieUser)
 	u := getUserByEmail(user.Email)
-
+	old := u.Token
 	//Change token
 	u.Token = generateSecureToken(30)
+
+	ratelimits[u.Token] = ratelimits[old]
 
 	database.Update("accounts").
 		Set("token", u.Token).
@@ -328,4 +330,6 @@ func refreshToken(w http.ResponseWriter, r *http.Request) {
 		Exec()
 
 	http.Redirect(w, r, "https://aipokedex.com/login", http.StatusSeeOther)
+
+	delete(ratelimits, old)
 }

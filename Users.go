@@ -44,12 +44,15 @@ func emailExist(email string) bool {
 
 func tokenExist(token string) bool {
 	var u []User
-	d, _ := database.Select("*").
+	d, e := database.Select("*").
 		From("accounts").
 		Where("token=$1", token).
 		QueryJSON()
+	if e != nil {
+		return false
+	}
 
-	e := json.Unmarshal(d, &u)
+	e = json.Unmarshal(d, &u)
 	if e != nil {
 		return false
 	}
