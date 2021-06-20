@@ -11,7 +11,9 @@ from tensorflow.keras import layers, models
 import cv2
 import json
 from scipy import ndimage
+import logging
 
+logging.getLogger("requests").setLevel(logging.WARNING)
 tf.config.threading.set_inter_op_parallelism_threads(8)
 tf.config.threading.set_intra_op_parallelism_threads(12)
 
