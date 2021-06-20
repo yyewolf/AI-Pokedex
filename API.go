@@ -87,10 +87,10 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 	/*
 		Applies the first rate limiter : IP based
 	*/
+	IP := strings.Split(r.Header.Get("X-Real-Ip"), ":")[0]
 	if !priviledgedIP.Has(u.Email) {
-		IP := strings.Split(r.Header.Get("X-Real-Ip"), ":")[0]
 		if _, ok := iplimits[IP]; !ok {
-			iplimits[IP] = ratelimit.NewBucket(2*time.Second, 1)
+			iplimits[IP] = ratelimit.NewBucket(30*time.Second, 1)
 		}
 		if iplimits[IP].Available() == 0 {
 			w.WriteHeader(http.StatusTooManyRequests)
@@ -102,6 +102,12 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusTooManyRequests)
 			w.Header().Add("RateLimit-Reset", strconv.FormatInt(int64(d.Seconds()), 10))
 			w.Write([]byte("1015 - You are being rate limited (" + strconv.FormatInt(int64(d.Seconds()), 10) + ")."))
+			return
+		}
+		if len(iptokens[IP]) >= 2 {
+			w.WriteHeader(http.StatusTooManyRequests)
+			w.Header().Add("RateLimit-Reset", strconv.FormatInt(int64(d.Seconds()), 10))
+			w.Write([]byte("1015 - You are being rate limited (Too many accounts)."))
 			return
 		}
 	}
@@ -132,6 +138,7 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 				ratelimits[token] = ratelimit.NewBucket(100*time.Second, 1)
 			}
 		}
+		iptokens[IP].Add(token)
 	}
 
 	/*

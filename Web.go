@@ -120,7 +120,12 @@ var (
 		EnableAutoUpdateDisposable()
 )
 
+var (
+	ips list
+)
+
 func signup(w http.ResponseWriter, r *http.Request) {
+	IP := strings.Split(r.Header.Get("X-Real-Ip"), ":")[0]
 	session, err := store.Get(r, "cookie-name")
 	if err == nil {
 		if val, ok := session.Values["user"]; ok {
@@ -146,6 +151,14 @@ func signup(w http.ResponseWriter, r *http.Request) {
 		datb, _ := webbox.ReadFile("www/signup.html")
 		dat := string(datb)
 		dat = strings.ReplaceAll(dat, "{Error}", "")
+		fmt.Fprint(w, dat)
+		return
+	}
+
+	if ips.Has(IP) {
+		datb, _ := webbox.ReadFile("www/signup.html")
+		dat := string(datb)
+		dat = strings.ReplaceAll(dat, "{Error}", "We've detected that you might already have an account, use it instead")
 		fmt.Fprint(w, dat)
 		return
 	}
@@ -219,6 +232,8 @@ func signup(w http.ResponseWriter, r *http.Request) {
 	session.Values["user"] = userSession
 
 	err = session.Save(r, w)
+
+	ips.Add(IP)
 
 	datb, _ := webbox.ReadFile("www/connected.html")
 	dat := formatConnected(newUser, string(datb))
@@ -305,6 +320,7 @@ func logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func refreshToken(w http.ResponseWriter, r *http.Request) {
+	IP := strings.Split(r.Header.Get("X-Real-Ip"), ":")[0]
 	session, err := store.Get(r, "cookie-name")
 	if err != nil {
 		http.Redirect(w, r, "https://aipokedex.com/login", http.StatusSeeOther)
@@ -332,4 +348,6 @@ func refreshToken(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "https://aipokedex.com/login", http.StatusSeeOther)
 
 	delete(ratelimits, old)
+	iptokens[IP].Remove(old)
+	iptokens[IP].Add(u.Token)
 }

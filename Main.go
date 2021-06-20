@@ -24,6 +24,7 @@ import (
 var calls int
 var ratelimits map[string]*ratelimit.Bucket
 var iplimits map[string]*ratelimit.Bucket
+var iptokens map[string]list
 
 var dbpswd = "ftT6A4MrF6hPt"
 
