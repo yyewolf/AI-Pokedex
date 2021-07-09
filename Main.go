@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -25,6 +26,9 @@ var calls int
 var ratelimits map[string]*ratelimit.Bucket
 var iplimits map[string]*ratelimit.Bucket
 var iptokens map[string]list
+
+var countsync sync.Mutex
+var counts map[string]int
 
 var dbpswd = "ftT6A4MrF6hPt"
 
@@ -78,6 +82,8 @@ func main() {
 
 	cacherecoveries = make(map[string]int)
 	recoveries = make(map[string]string)
+
+	counts = make(map[string]int)
 
 	//Connect to paypal
 	var err error

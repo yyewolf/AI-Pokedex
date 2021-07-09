@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -63,6 +64,7 @@ func hostService() {
 	mux.Get("/changepass/{id}", compressHandler(http.HandlerFunc(changePassword)))
 	mux.Get("/forgotpass", compressHandler(http.HandlerFunc(forgotPassword)))
 	mux.Get("/logout", compressHandler(http.HandlerFunc(logout)))
+	mux.Get("/counts", compressHandler(http.HandlerFunc(showCounts)))
 	mux.Get("/", compressHandler(http.HandlerFunc(indexHandler)))
 
 	go srv.ListenAndServe()
@@ -350,4 +352,36 @@ func refreshToken(w http.ResponseWriter, r *http.Request) {
 	delete(ratelimits, old)
 	iptokens[IP].Remove(old)
 	iptokens[IP].Add(u.Token)
+}
+
+func showCounts(w http.ResponseWriter, r *http.Request) {
+	session, err := store.Get(r, "cookie-name")
+	if err != nil {
+		http.Redirect(w, r, "https://aipokedex.com/login", http.StatusSeeOther)
+	}
+	var val interface{}
+	var ok bool
+	if val, ok = session.Values["user"]; !ok {
+		http.Redirect(w, r, "https://aipokedex.com/login", http.StatusSeeOther)
+		return
+	}
+
+	user := val.(cookieUser)
+	if user.Email != "yyewolf@gmail.com" {
+		return
+	}
+	n := map[int][]string{}
+	var a []int
+	for k, v := range counts {
+		n[v] = append(n[v], k)
+	}
+	for k := range n {
+		a = append(a, k)
+	}
+	sort.Sort(sort.Reverse(sort.IntSlice(a)))
+	for _, k := range a {
+		for _, s := range n[k] {
+			fmt.Fprintf(w, "%s, %d\n", s, k)
+		}
+	}
 }

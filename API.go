@@ -201,6 +201,14 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 
 	if response != "" {
 		calls++
+		if strings.Contains(token, "pokeboat") {
+			token = "pokeboat"
+		}
+		go func() {
+			countsync.Lock()
+			counts[token]++
+			countsync.Unlock()
+		}()
 		urlcache.Set(url, response, cache.DefaultExpiration)
 		w.Header().Add("Content-Type", "application/json")
 		fmt.Fprint(w, response)

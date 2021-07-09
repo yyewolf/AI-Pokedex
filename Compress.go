@@ -3,6 +3,7 @@ package main
 import (
 	"compress/flate"
 	"compress/gzip"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -17,6 +18,7 @@ type compressResponseWriter struct {
 
 func (cw *compressResponseWriter) WriteHeader(c int) {
 	cw.w.Header().Del("Content-Length")
+	fmt.Println(c)
 	cw.w.WriteHeader(c)
 }
 
