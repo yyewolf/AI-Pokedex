@@ -68,6 +68,7 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 	if !u.Verified && u.Email != "" {
 		w.WriteHeader(http.StatusNotAcceptable)
 		w.Write([]byte("403 - Verify your email address to access this."))
+		return
 	}
 
 	/*
