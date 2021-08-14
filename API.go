@@ -36,6 +36,8 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 	token := r.FormValue("token")
 	model := r.FormValue("model")
 
+	token = strings.TrimSpace(token)
+
 	if model != "background" {
 		model = "classic"
 	}
