@@ -3,8 +3,7 @@ module GorgoniaTest
 go 1.16
 
 require (
-	github.com/AfterShip/email-verifier v1.1.0 // indirect
-	github.com/badoux/checkmail v1.2.1
+	github.com/AfterShip/email-verifier v1.1.0
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/felixge/httpsnoop v1.0.1
@@ -16,20 +15,16 @@ require (
 	github.com/gorilla/sessions v1.2.1
 	github.com/jmoiron/sqlx v1.3.3 // indirect
 	github.com/juju/ratelimit v1.0.1
-	github.com/liamylian/jsontime/v2 v2.0.0 // indirect
 	github.com/lib/pq v1.10.0 // indirect
 	github.com/mattn/go-colorable v0.1.8 // indirect
-	github.com/mattn/go-isatty v0.0.12 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/mgutz/jo v1.1.0 // indirect
 	github.com/mgutz/logxi v0.0.0-20161027140823-aebf8a7d67ab // indirect
 	github.com/mgutz/str v1.2.0 // indirect
 	github.com/mgutz/to v1.0.0 // indirect
-	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/plutov/paypal/v4 v4.1.0
-	github.com/pmylund/go-cache v2.1.0+incompatible // indirect
+	github.com/pmylund/go-cache v2.1.0+incompatible
 	github.com/satori/go.uuid v1.2.0 // indirect
-	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/webhookrelay/paypal-ipn v0.0.0-20180818224235-39d33d937b4d
 	golang.org/x/crypto v0.0.0-20210415154028-4f45737414dc
 	golang.org/x/net v0.0.0-20210610132358-84b48f89b13b // indirect

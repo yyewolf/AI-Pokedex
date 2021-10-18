@@ -26,6 +26,7 @@ var calls int
 var ratelimits map[string]*ratelimit.Bucket
 var iplimits map[string]*ratelimit.Bucket
 var iptokens map[string]list
+var demultiplex = make(map[string]time.Time)
 
 var countsync sync.Mutex
 var counts map[string]int

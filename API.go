@@ -180,6 +180,21 @@ func findPoke(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if demultiplexEmails.Has(u.Email) {
+		key, found := demultiplex[u.Email]
+		if found {
+			d := time.Since(key)
+			if d < 4*time.Second {
+				demultiplex[u.Email] = time.Now()
+				time.Sleep(6 - d)
+			} else {
+				demultiplex[u.Email] = time.Now()
+			}
+		} else {
+			demultiplex[u.Email] = time.Now()
+		}
+	}
+
 	req, err := http.NewRequest("POST", "http://127.0.0.1:5300", strings.NewReader(url))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
