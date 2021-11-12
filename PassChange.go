@@ -110,7 +110,7 @@ func forgotPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := generateSecureToken(16)
+	id := generateRecoveryToken(16)
 	recoveries[id] = email
 	cacherecoveries[email]++
 

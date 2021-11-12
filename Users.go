@@ -2,8 +2,10 @@ package main
 
 import (
 	"crypto/rand"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	_ "image/jpeg"
 )
 
@@ -20,12 +22,21 @@ type User struct {
 	Verified       bool   `json:"verified" db:"verified"`
 }
 
-func generateSecureToken(length int) string {
+func generateRecoveryToken(length int) string {
 	b := make([]byte, length)
 	if _, err := rand.Read(b); err != nil {
 		return ""
 	}
 	return hex.EncodeToString(b)
+}
+
+func (u *User) generateSecureToken(length int) string {
+	b := make([]byte, length)
+	if _, err := rand.Read(b); err != nil {
+		return ""
+	}
+	email := base64.StdEncoding.EncodeToString([]byte(u.Email))
+	return fmt.Sprintf("%s.%s", email, hex.EncodeToString(b))
 }
 
 func emailExist(email string) bool {

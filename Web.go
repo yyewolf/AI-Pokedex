@@ -210,8 +210,8 @@ func signup(w http.ResponseWriter, r *http.Request) {
 		ID:       node.Generate().String(),
 		Email:    email,
 		Password: passwordHash,
-		Token:    generateSecureToken(30),
 	}
+	newUser.Token = newUser.generateSecureToken(30)
 
 	_, err = database.InsertInto("accounts").
 		Columns("*").
@@ -338,7 +338,7 @@ func refreshToken(w http.ResponseWriter, r *http.Request) {
 	u := getUserByEmail(user.Email)
 	old := u.Token
 	//Change token
-	u.Token = generateSecureToken(30)
+	u.Token = u.generateSecureToken(30)
 
 	ratelimits[u.Token] = ratelimits[old]
 
